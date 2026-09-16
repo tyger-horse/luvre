@@ -1,0 +1,5 @@
+# £UVR€ — Caddy reverse proxy. HTTPS is automatic (Let's Encrypt);
+# point your DNS at the VPS, set DOMAIN on the host, and walk away.
+{$DOMAIN} {
+	reverse_proxy app:8000
+}

@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>£UVR€ — Veil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Josefin+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ============ foundation ============ */
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --ink:#cac4ce;                     /* every letter on the site */
+  --ink-dim:rgba(202,196,206,.62);
+  --ink-faint:rgba(202,196,206,.36);
+  --lav:#cac4ce;
+  --lav-soft:rgba(202,196,206,.5);
+  --lav-line:rgba(202,196,206,.42);
+  --hair:rgba(202,196,206,.13);
+  --hair2:rgba(202,196,206,.3);
+  --f-ui:'Josefin Sans',sans-serif;
+  --f-serif:'Cormorant Garamond',serif;
+  --f-logo:'Cinzel',serif;
+  --curve:cubic-bezier(.22,1,.36,1);
+}
+html,body{height:100%}
+body{background:#050907;color:var(--ink);font-family:var(--f-ui);overflow:hidden;
+  user-select:none;-webkit-user-select:none;-webkit-tap-highlight-color:transparent;overscroll-behavior:none}
+[hidden]{display:none!important}
+button{font-family:inherit;background:none;border:0;color:inherit;cursor:pointer}
+::selection{background:rgba(202,196,206,.25);color:#f2eff6}
+:focus-visible{outline:1px solid var(--lav);outline-offset:3px}
+
+/* ============ marble backdrop (emerald room, unchanged) ============ */
+#bgWrap{position:fixed;inset:-7%;z-index:0;opacity:0;transition:opacity 1.6s ease .1s;will-change:transform}
+body.ready #bgWrap{opacity:1}
+#marble{position:absolute;inset:0;width:100%;height:100%;animation:drift 90s ease-in-out infinite alternate}
+@keyframes drift{from{transform:translate3d(-1.1%,-.8%,0)}to{transform:translate3d(1.1%,.8%,0)}}
+.bg-shade{position:absolute;inset:0;pointer-events:none;background:
+  radial-gradient(100% 72% at 50% 0%,rgba(2,6,4,.58),transparent 62%),
+  radial-gradient(120% 62% at 50% 110%,rgba(2,6,4,.62),transparent 58%),
+  linear-gradient(102deg,rgba(2,6,4,.3),transparent 42%,rgba(2,6,4,.36))}
+
+/* ============ HUD ============ */
+.hud{position:fixed;left:0;right:0;z-index:40;display:grid;grid-template-columns:1fr auto 1fr;
+  align-items:start;padding:26px 34px;pointer-events:none;opacity:0;transition:opacity .9s ease .7s}
+body.ready .hud{opacity:1}
+.hud>*{pointer-events:auto}
+.hud.bottom{top:auto;bottom:0;align-items:center;padding:22px 34px}
+.corner{font:300 10px/1.9 var(--f-ui);letter-spacing:.36em;text-transform:uppercase;color:var(--ink-faint)}
+.corner .sub{display:block;color:var(--ink-dim)}
+.corner.right{text-align:right}
+#hint{transition:opacity .8s ease}
+#hint.gone{opacity:0}
+.consign-link{font:300 10px var(--f-ui);letter-spacing:.42em;text-transform:uppercase;color:var(--ink-dim);
+  padding:6px 2px;border-bottom:1px solid transparent;transition:.35s}
+.consign-link:hover{color:var(--ink);border-bottom-color:var(--lav-line)}
+
+/* laser wordmark — £UVR€ */
+.logo-wrap{grid-column:2;text-align:center;position:relative}
+.logo{display:inline-block;position:relative;
+  font:400 clamp(24px,3.2vw,42px)/1 var(--f-logo);
+  letter-spacing:.5em;padding-left:.5em;color:var(--lav);
+  filter:url(#laserFx);
+  animation:laserOn 1.4s steps(1,end) both,laserPulse 3.6s 1.4s ease-in-out infinite}
+@keyframes laserOn{0%{opacity:0}10%{opacity:.35}14%{opacity:.08}26%{opacity:.85}32%{opacity:.4}46%{opacity:1}100%{opacity:1}}
+@keyframes laserPulse{
+  0%,100%{text-shadow:0 0 1px rgba(240,238,246,.85),0 0 9px rgba(202,196,206,.7),0 0 24px rgba(202,196,206,.45),0 0 56px rgba(184,166,228,.3)}
+  50%{text-shadow:0 0 1px rgba(246,244,250,.95),0 0 13px rgba(216,210,224,.9),0 0 32px rgba(202,196,206,.6),0 0 72px rgba(184,166,228,.44)}}
+.logo::after{content:"";position:absolute;left:4%;right:4%;bottom:-15px;height:1px;transform-origin:50% 50%;
+  background:linear-gradient(90deg,transparent,var(--lav) 18%,#ece9f2 50%,var(--lav) 82%,transparent);
+  transform:scaleX(0);opacity:0;animation:beam 1.5s .85s ease-out}
+@keyframes beam{0%{transform:scaleX(0);opacity:0}18%{opacity:1}55%{transform:scaleX(1)}100%{transform:scaleX(1);opacity:0}}
+
+/* meter */
+.meter{grid-column:2;display:flex;align-items:center;gap:14px;font:300 11px var(--f-ui);
+  letter-spacing:.34em;color:var(--ink-dim)}
+.meter .bar{width:120px;height:1px;background:rgba(202,196,206,.18);position:relative;overflow:hidden}
+.meter .bar b{position:absolute;inset:0;background:var(--lav);transform-origin:0 50%;transform:scaleX(0);
+  box-shadow:0 0 8px var(--lav-soft)}
+
+/* edge navigation */
+.nav{position:fixed;top:50%;transform:translateY(-50%);z-index:30;width:46px;height:46px;border-radius:50%;
+  border:1px solid rgba(202,196,206,.2);background:rgba(6,12,9,.35);color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;transition:.35s;backdrop-filter:blur(4px)}
+.nav:hover{color:var(--ink);border-color:var(--lav-line);box-shadow:0 0 24px -6px var(--lav-soft)}
+.nav.off{opacity:.12;pointer-events:none}
+#navPrev{left:26px}#navNext{right:26px}
+@media (hover:none),(max-width:880px){.nav{display:none}}
+
+/* ============ stage / slides ============ */
+#stage{position:fixed;inset:0;z-index:10;cursor:grab;touch-action:none}
+#stage:active{cursor:grabbing}
+#track{position:absolute;inset:0;will-change:transform}
+.slide{position:absolute;top:0;width:100%;height:100%}
+.inner{height:100%;display:flex;align-items:center;justify-content:center;gap:clamp(36px,6vw,110px);padding:0 8vw}
+.art-wrap{display:flex;flex-direction:column;align-items:center;gap:16px;will-change:transform}
+
+/* the auto-frame (colors derived per-piece from the artwork itself) */
+.art{position:relative;width:min(46vh,36vw);aspect-ratio:4/5;
+  --gap:clamp(10px,2vmin,20px);--mp:clamp(12px,2.3vmin,24px);
+  --l:rgba(190,210,196,.5);--l-soft:rgba(190,210,196,.35);--l-line:rgba(190,210,196,.14);
+  --dom:rgba(60,140,110,.45);--dom2:rgba(60,140,110,.16);--matHi:#0b100d}
+.deco{position:absolute;inset:0;background:linear-gradient(165deg,#111814,#070b09 70%);
+  border:1px solid var(--l);
+  box-shadow:0 34px 70px -26px rgba(0,0,0,.92),0 0 66px -6px var(--dom),inset 0 0 0 1px rgba(255,255,255,.035);
+  transition:opacity .45s ease .22s,transform .7s var(--curve);transform-origin:50% 50%}
+.deco::before{content:"";position:absolute;inset:-11px;border:1px solid var(--l-soft);pointer-events:none}
+.mat{position:absolute;inset:var(--gap);padding:var(--mp)}
+.mat-bg{position:absolute;inset:0;background:radial-gradient(130% 95% at 50% 24%,var(--matHi),#050807 82%);
+  box-shadow:inset 0 0 0 1px var(--l-line),inset 0 0 48px var(--dom2);transition:opacity .5s ease .25s}
+.mat canvas{position:relative;width:100%;height:100%;display:block}
+.art.ghost .deco{opacity:0;transform:scale(1.14)}
+.art.ghost .mat-bg{opacity:0}
+
+.plaque{font:300 9px var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:rgba(202,196,206,.8);
+  border:1px solid rgba(202,196,206,.24);padding:6px 12px 5px 16px}
+
+/* caption */
+.caption{width:min(30vw,330px);will-change:transform,opacity}
+.cap-no{font:300 10px/1 var(--f-ui);letter-spacing:.42em;text-transform:uppercase;color:var(--ink);opacity:.78}
+.cap-maker{font:500 clamp(34px,3.4vw,54px)/1.05 var(--f-serif);color:var(--ink);margin:16px 0 6px;font-weight:500}
+.cap-title{font:italic 400 clamp(17px,1.5vw,22px)/1.4 var(--f-serif);color:var(--ink-dim)}
+.cap-rule{display:block;width:44px;height:1px;background:var(--hair2);margin:24px 0 14px}
+.cap-year{font:300 12px/1.7 var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:var(--ink-dim)}
+
+/* entrance */
+@keyframes rise{from{opacity:0;transform:translateY(28px) scale(.97)}to{opacity:1}}
+@keyframes capIn{from{opacity:0;transform:translateY(14px)}to{opacity:1}}
+body.ready .slide[data-i="0"] .art-wrap{animation:rise 1s .35s var(--curve) backwards}
+body.ready .slide[data-i="0"] .caption{animation:capIn 1s .6s var(--curve) backwards}
+
+/* ============ dossier (expanded view) ============ */
+.dossier{position:fixed;inset:0;z-index:60}
+.d-backdrop{position:absolute;inset:0;background:rgba(3,8,6,.82);backdrop-filter:blur(9px) saturate(1.15);
+  opacity:0;transition:opacity .6s ease}
+.dossier.open .d-backdrop{opacity:1}
+.d-body{position:relative;height:100dvh;display:grid;grid-template-columns:1.08fr .92fr;
+  place-items:center;gap:3vw;padding:9dvh 7vw 6dvh}
+.d-close{position:fixed;top:24px;right:26px;z-index:66;width:44px;height:44px;border-radius:50%;
+  border:1px solid rgba(202,196,206,.25);background:rgba(5,10,8,.5);color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;transition:.35s;opacity:0;pointer-events:none}
+.dossier.open .d-close{opacity:1;pointer-events:auto;transition-delay:.45s}
+.d-close:hover{color:var(--ink);border-color:var(--lav-line)}
+
+.d-art{display:flex;flex-direction:column;align-items:center;min-width:0;--dw:min(42vh,56vw)}
+.d-art .art{width:var(--dw)}
+.g-hud{width:var(--dw);display:flex;justify-content:space-between;align-items:baseline;
+  font:300 10px var(--f-ui);letter-spacing:.32em;text-transform:uppercase;color:var(--ink-faint)}
+.g-hud .g-label{color:var(--ink-dim)}
+#gStage{width:100%;overflow:hidden;cursor:grab;touch-action:none;margin-top:14px}
+#gStage:active{cursor:grabbing}
+#gTrack{display:flex;will-change:transform}
+.g-item{flex:0 0 100%;display:flex;justify-content:center;align-items:center}
+.g-item .art{width:var(--dw)}
+.g-ctrl{width:var(--dw);display:flex;align-items:center;justify-content:center;gap:20px;margin-top:16px}
+.g-arrow{width:34px;height:34px;border:1px solid var(--hair2);border-radius:50%;color:var(--ink-dim);
+  display:flex;align-items:center;justify-content:center;transition:.3s}
+.g-arrow:hover{color:var(--ink);border-color:var(--lav-line)}
+.g-dots{display:flex;gap:8px}
+.g-dots span{width:16px;height:1px;background:rgba(202,196,206,.25);transition:.4s}
+.g-dots span.on{background:var(--lav);box-shadow:0 0 6px var(--lav-soft)}
+.g-hint{font:300 9px var(--f-ui);letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint);margin-top:14px}
+.g-hint .m-only{display:none}
+
+.d-panel{max-height:78dvh;overflow:auto;padding:10px 14px 10px 0;user-select:text;scrollbar-width:thin;
+  scrollbar-color:rgba(202,196,206,.2) transparent}
+.d-panel::-webkit-scrollbar{width:4px}
+.d-panel::-webkit-scrollbar-thumb{background:rgba(202,196,206,.18)}
+.d-panel>*{opacity:0;transform:translateY(16px);transition:opacity .25s ease,transform .25s ease}
+.d-panel.in>*{opacity:1;transform:none;
+  transition:opacity .55s ease calc(.26s + var(--d)*.07s),transform .6s var(--curve) calc(.26s + var(--d)*.07s)}
+.p-over{font:300 10px/1 var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:var(--ink);opacity:.78}
+.p-maison{font:500 clamp(32px,3vw,48px)/1.06 var(--f-serif);margin:14px 0 6px}
+.p-title{font:italic 400 19px/1.4 var(--f-serif);color:var(--ink-dim)}
+.p-story{font:italic 400 17px/1.65 var(--f-serif);color:var(--ink-dim);margin:24px 0 4px;max-width:46ch}
+.p-specs div{display:grid;grid-template-columns:110px 1fr;gap:14px;padding:12px 0;border-top:1px solid var(--hair)}
+.p-specs dt{font:300 10px/1.7 var(--f-ui);letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint)}
+.p-specs dd{font:400 16px/1.5 var(--f-serif);color:var(--ink)}
+.p-offer{display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin-top:26px;padding-top:22px;border-top:1px solid var(--hair)}
+.p-price{font:500 30px var(--f-serif)}
+.p-enquire{font:400 11px var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:var(--ink);
+  border:1px solid var(--lav-line);padding:13px 24px 12px 28px;transition:.3s}
+.p-enquire:hover{background:rgba(202,196,206,.08);box-shadow:0 0 26px -8px var(--lav-soft)}
+.p-enquire:disabled{opacity:.5;cursor:default}
+.p-note{font:italic 400 13px/1.6 var(--f-serif);color:var(--ink-faint);margin-top:16px}
+
+/* ============ atelier portal (unlisted route) ============ */
+.veil{position:fixed;inset:0;z-index:70;display:grid;place-items:center;padding:20px}
+.veil-bg{position:absolute;inset:0;background:rgba(2,6,4,.74);opacity:0;transition:opacity .45s ease}
+.veil.on .veil-bg{opacity:1}
+.sheet{position:relative;width:min(500px,94vw);max-height:88dvh;overflow:auto;background:rgba(6,12,9,.96);
+  border:1px solid var(--hair2);padding:clamp(28px,5vw,46px);opacity:0;transform:translateY(16px);
+  transition:opacity .5s ease .1s,transform .55s var(--curve) .1s;user-select:text;
+  scrollbar-width:thin;scrollbar-color:rgba(202,196,206,.2) transparent}
+.sheet::-webkit-scrollbar{width:4px}
+.sheet::-webkit-scrollbar-thumb{background:rgba(202,196,206,.18)}
+.veil.on .sheet{opacity:1;transform:none}
+.s-over{font:300 10px/1 var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:var(--ink);opacity:.78}
+.sheet h3{font:500 clamp(28px,4vw,36px)/1.1 var(--f-serif);margin:14px 0 10px}
+.s-copy{font:italic 400 15px/1.6 var(--f-serif);color:var(--ink-dim);margin-bottom:26px}
+.f-field{display:block;margin-bottom:20px}
+.f-field span{display:block;font:300 10px var(--f-ui);letter-spacing:.32em;text-transform:uppercase;
+  color:var(--ink-faint);margin-bottom:8px}
+.f-field input,.f-field textarea{width:100%;background:none;border:0;border-bottom:1px solid rgba(202,196,206,.25);
+  color:var(--ink);font:400 17px var(--f-serif);padding:6px 2px 9px;transition:border-color .3s;resize:vertical}
+.f-field input:focus,.f-field textarea:focus{outline:none;border-bottom-color:var(--lav)}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 24px}
+.form-msg{font:italic 400 13px var(--f-serif);color:var(--ink);opacity:.85;min-height:18px;margin:2px 0 14px}
+.btn-line{font:400 11px var(--f-ui);letter-spacing:.4em;text-transform:uppercase;color:var(--ink);
+  border:1px solid var(--lav-line);padding:13px 24px 12px 28px;transition:.3s}
+.btn-line:hover{background:rgba(202,196,206,.08)}
+.v-close{position:absolute;top:16px;right:16px;width:38px;height:38px;border-radius:50%;
+  border:1px solid var(--hair2);color:var(--ink-dim);display:flex;align-items:center;justify-content:center;transition:.3s}
+.v-close:hover{color:var(--ink);border-color:var(--lav-line)}
+
+/* auth tabs */
+.p-tabs{display:flex;gap:26px;margin-bottom:24px}
+.ptab{font:300 10px var(--f-ui);letter-spacing:.36em;text-transform:uppercase;color:var(--ink-faint);
+  padding:4px 0 6px;border-bottom:1px solid transparent;transition:.3s}
+.ptab.on{color:var(--ink);border-bottom-color:var(--lav-line)}
+
+/* signed-in desk */
+.desk-head{display:flex;justify-content:space-between;align-items:center;gap:14px;
+  padding:13px 16px;border:1px solid var(--hair);margin-bottom:26px;
+  font:300 11px/1.6 var(--f-ui);letter-spacing:.14em;color:var(--ink-dim)}
+.desk-head b{color:var(--ink);font-weight:400}
+.desk-head .so{font:300 9px var(--f-ui);letter-spacing:.3em;text-transform:uppercase;color:var(--ink-faint);transition:.3s}
+.desk-head .so:hover{color:var(--ink)}
+
+/* file picking */
+.file-line{display:block;font:italic 400 15px var(--f-serif);color:var(--ink-dim);
+  border:1px dashed rgba(202,196,206,.3);padding:12px 14px;cursor:pointer;transition:.3s;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-line:hover{color:var(--ink);border-color:var(--lav-line)}
+.file-prev{display:block;max-height:110px;margin-top:12px;border:1px solid var(--hair2)}
+
+/* ============ toasts ============ */
+.toasts{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:90;display:flex;
+  flex-direction:column;gap:10px;align-items:center;pointer-events:none}
+.toast{font:italic 400 15px/1.5 var(--f-serif);color:var(--ink);background:rgba(6,12,9,.92);
+  border:1px solid rgba(202,196,206,.18);border-left:2px solid var(--lav);padding:12px 24px;
+  max-width:min(84vw,480px);text-align:center;opacity:0;transform:translateY(12px);
+  transition:.45s var(--curve);box-shadow:0 18px 44px -18px rgba(0,0,0,.8)}
+.toast.on{opacity:1;transform:none}
+
+/* ============ responsive ============ */
+@media (orientation:portrait),(max-width:880px){
+  .inner{flex-direction:column;justify-content:center;gap:26px;padding-top:7dvh}
+  .art{width:min(72vw,42vh)}
+  .caption{width:auto;max-width:82vw;text-align:center}
+  .cap-rule{margin:16px auto 10px}
+  .cap-maker{font-size:clamp(28px,7.5vw,38px)}
+  .hud.bottom .corner.left{display:none}
+  .g-hint .d-only{display:none}
+  .g-hint .m-only{display:inline}
+  .d-body{display:flex;flex-direction:column;justify-content:flex-start;gap:0;padding:0}
+  .d-art{--dw:min(66vw,34dvh);margin-top:11dvh}
+  .d-panel{position:fixed;left:0;right:0;bottom:0;max-height:56dvh;width:100%;
+    background:rgba(6,11,9,.9);backdrop-filter:blur(14px);border-top:1px solid var(--hair2);
+    padding:26px 26px calc(28px + env(safe-area-inset-bottom));overflow:auto;
+    transform:translateY(103%);transition:transform .6s var(--curve) .16s}
+  .d-panel.in{transform:none}
+  .f-grid{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  .hud{padding:18px 16px}
+  .corner .sub{display:none}
+  .corner{font-size:9px}
+  .logo{font-size:21px;letter-spacing:.38em;padding-left:.38em}
+  .corner.right{max-width:88px}
+  .hud.bottom .corner.right{display:none}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- SVG filter: living texture for the laser wordmark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="laserFx" x="-30%" y="-80%" width="160%" height="260%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.002 0.09" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.002 0.09;0.0045 0.12;0.002 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<!-- emerald marble, rendered procedurally -->
+<div id="bgWrap" aria-hidden="true">
+  <canvas id="marble"></canvas>
+  <div class="bg-shade"></div>
+</div>
+
+<header class="hud top">
+  <div class="corner left">Collection N° 1<span class="sub" id="colSub">Veil — seven hangings</span></div>
+  <div class="logo-wrap"><h1 class="logo" aria-label="LUVRE">£UVR€</h1></div>
+  <div class="corner right"><button class="consign-link" id="consignOpen" title="Atelier portal — unlisted route">Consign</button></div>
+</header>
+
+<main id="stage" aria-label="Gallery"><div id="track"></div></main>
+
+<button class="nav" id="navPrev" aria-label="Previous piece">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M15 4 7 12l8 8"/></svg>
+</button>
+<button class="nav" id="navNext" aria-label="Next piece">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 4l8 8-8 8"/></svg>
+</button>
+
+<footer class="hud bottom">
+  <div class="corner left" id="hint">drag to wander — tap a piece for its dossier</div>
+  <div class="meter"><span id="idx">01</span><i class="bar"><b id="barFill"></b></i><span id="tot">07</span></div>
+  <div class="corner right">every maker remains unnamed</div>
+</footer>
+
+<!-- expanded dossier -->
+<section class="dossier" id="dossier" role="dialog" aria-modal="true" aria-label="Piece dossier" hidden>
+  <div class="d-backdrop"></div>
+  <button class="d-close" id="dClose" aria-label="Close dossier">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+  </button>
+  <div class="d-body">
+    <div class="d-art">
+      <div class="g-hud"><span class="g-label" id="gLabel"></span><span id="gIdx"></span></div>
+      <div id="gStage"><div id="gTrack"></div></div>
+      <div class="g-ctrl">
+        <button class="g-arrow" id="gPrev" aria-label="Previous view">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M15 4 7 12l8 8"/></svg>
+        </button>
+        <div class="g-dots" id="gDots"></div>
+        <button class="g-arrow" id="gNext" aria-label="Next view">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 4l8 8-8 8"/></svg>
+        </button>
+      </div>
+      <p class="g-hint"><span class="d-only">drag the work to turn it · esc to return</span><span class="m-only">drag sideways to turn · pull down to return</span></p>
+    </div>
+    <div class="d-panel" id="dPanel">
+      <span class="p-over" style="--d:0" id="dOver"></span>
+      <h2 class="p-maison" style="--d:1" id="dMaison"></h2>
+      <p class="p-title" style="--d:2" id="dTitle"></p>
+      <p class="p-story" style="--d:3" id="dStory"></p>
+      <dl class="p-specs" style="--d:4" id="dSpecs"></dl>
+      <div class="p-offer" style="--d:5">
+        <span class="p-price" id="dPrice"></span>
+        <button class="p-enquire" id="enquire">Enquire</button>
+      </div>
+      <p class="p-note" style="--d:6">Inquiries route to the curatorial desk. The maker is never named — not to buyers, not in print.</p>
+    </div>
+  </div>
+</section>
+
+<!-- unlisted atelier portal: accounts + open posting -->
+<div class="veil" id="consign" role="dialog" aria-modal="true" aria-label="Atelier portal" hidden>
+  <div class="veil-bg"></div>
+  <div class="sheet">
+    <button class="v-close" id="consignClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+    <span class="s-over">Unlisted portal</span>
+    <h3>Consign to £UVR€</h3>
+    <p class="s-copy">Any house may hold a key to this atelier — no invitation, no name. Accounts are private; only the pseudonym you publish under is ever shown.</p>
+
+    <div id="authBox">
+      <div class="p-tabs">
+        <button class="ptab on" data-auth="new" type="button">Create access</button>
+        <button class="ptab" data-auth="ret" type="button">Sign in</button>
+      </div>
+      <form id="regForm" novalidate>
+        <label class="f-field"><span>House handle — private</span><input name="handle" autocomplete="off"></label>
+        <label class="f-field"><span>Private contact</span><input name="contact" autocomplete="off"></label>
+        <label class="f-field"><span>Key · six characters or more</span><input name="pass" type="password" autocomplete="new-password"></label>
+        <p class="form-msg" id="regMsg" role="status"></p>
+        <button class="btn-line" type="submit">Cut a key</button>
+      </form>
+      <form id="logForm" hidden novalidate>
+        <label class="f-field"><span>House handle</span><input name="handle" autocomplete="off"></label>
+        <label class="f-field"><span>Key</span><input name="pass" type="password" autocomplete="current-password"></label>
+        <p class="form-msg" id="logMsg" role="status"></p>
+        <button class="btn-line" type="submit">Sign in</button>
+      </form>
+    </div>
+
+    <div id="deskBox" hidden>
+      <div class="desk-head">
+        <span>signed in · <b id="deskHandle"></b> — never published</span>
+        <button class="so" id="signOut" type="button">sign out</button>
+      </div>
+      <form id="postForm" novalidate>
+        <label class="f-field"><span>House pseudonym — published</span><input name="pseudonym" autocomplete="off"></label>
+        <label class="f-field"><span>Title of the piece</span><input name="title" autocomplete="off"></label>
+        <div class="f-grid">
+          <label class="f-field"><span>Year</span><input name="year" autocomplete="off"></label>
+          <label class="f-field"><span>Price</span><input name="price" autocomplete="off"></label>
+        </div>
+        <label class="f-field"><span>Textile</span><input name="textile" autocomplete="off"></label>
+        <label class="f-field"><span>Dimensions</span><input name="dims" autocomplete="off"></label>
+        <label class="f-field"><span>Statement</span><textarea name="story" rows="3"></textarea></label>
+        <label class="f-field"><span>Care</span><input name="care" autocomplete="off"></label>
+        <label class="f-field"><span>Plate image *</span>
+          <input type="file" id="postFile" accept="image/*" hidden>
+          <span class="file-line" id="fileLine">select a photograph of the piece</span>
+          <img class="file-prev" id="filePrev" alt="" hidden>
+        </label>
+        <p class="form-msg" id="postMsg" role="status"></p>
+        <button class="btn-line" type="submit">Hang it in the gallery</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   £UVR€ — single-file gallery.
+
+   =====================================================================
+   THE BACKEND — accounts & open consignment
+   ---------------------------------------------------------------------
+   TRANSPORT = 'local'  (current): the whole backend runs inside the
+   browser against localStorage, so anyone can register an account and
+   hang pieces from outside the admin/developer workspace — no server,
+   no keys, and listings persist across reloads.
+
+   TRANSPORT = 'http'   (production): point BASE at your own server and
+   replace the bodies of the API methods below with fetch calls —
+   the method signatures already map 1:1 onto REST:
+
+       POST {BASE}/auth/register   {handle, contact, pass}        → {token, handle}
+       POST {BASE}/auth/login      {handle, pass}                 → {token, handle}
+       GET  {BASE}/auth/session    Authorization: Bearer <token>  → {handle}
+       POST {BASE}/auth/logout     Authorization: Bearer <token>
+       POST {BASE}/listings        Authorization: Bearer <token>
+            JSON {pseudonym, title, year, textile, dims, price,
+                  story, care, img}                                → public listing
+       GET  {BASE}/listings                                        → [public listing]
+
+   Server-side schema (PRIVATE tables — the blind-seller rule lives here):
+       users    (id, handle, contact, pass_hash, salt, role)
+       listings (id, seller_ref → users.id, pseudonym, title, year,
+                 textile, dims, price, story, care, image, status)
+   The PUBLIC projection of a listing drops seller_ref, handle and
+   contact — only the chosen pseudonym is ever published.
+
+   Local-transport caveat: passwords are salted + SHA-256 hashed, but
+   localStorage is still client-readable. Run the http transport with
+   server-side hashing (bcrypt/argon2) for production.
+   The API is also exposed as window.LUVRE_API for external tooling.
+   ===================================================================== */
+const LUVRE_API=(()=>{
+  const NS='luvre.v2';
+  const mem={users:[],sessions:[],listings:[]};     // fallback if storage is blocked
+  const store={
+    get(k){try{const v=localStorage.getItem(NS+'.'+k);return v?JSON.parse(v):mem[k]}catch(e){return mem[k]}},
+    set(k,v){try{localStorage.setItem(NS+'.'+k,JSON.stringify(v));return true}catch(e){mem[k]=v;return false}}
+  };
+  const uid=()=>{try{return [...crypto.getRandomValues(new Uint8Array(8))].map(b=>b.toString(16).padStart(2,'0')).join('')}
+    catch(e){return Math.random().toString(16).slice(2,18)}};
+  async function sha(str){
+    if(crypto.subtle){ // secure context
+      const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+      return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+    }
+    let h=5381;for(let i=0;i<str.length;i++)h=((h*33)^str.charCodeAt(i))>>>0; // fallback
+    return 'f'+h.toString(16);
+  }
+  function userFromToken(token){
+    if(!token)return null;
+    const sessions=(store.get('sessions')||[]).filter(s=>s.exp>Date.now());
+    const s=sessions.find(x=>x.token===token);
+    if(!s)return null;
+    return (store.get('users')||[]).find(u=>u.id===s.userId)||null;
+  }
+  async function register({handle,contact,pass}){
+    handle=String(handle||'').trim();contact=String(contact||'').trim();
+    if(!handle||!contact||!pass)throw new Error('Every field is required.');
+    if(pass.length<6)throw new Error('A key of six characters at least.');
+    const users=store.get('users')||[];
+    if(users.some(u=>u.handle===handle.toLowerCase()))throw new Error('That handle is already held.');
+    const salt=uid().slice(0,12);
+    users.push({id:uid(),handle:handle.toLowerCase(),contact,salt,hash:await sha(salt+pass),created:Date.now()});
+    if(!store.set('users',users))throw new Error('The vault refused (storage full).');
+    return login({handle,pass});                        // cut a key → walk straight in
+  }
+  async function login({handle,pass}){
+    const u=(store.get('users')||[]).find(x=>x.handle===String(handle||'').trim().toLowerCase());
+    if(!u||await sha(u.salt+pass)!==u.hash)throw new Error('No such handle, or the key does not turn.');
+    const token=uid();
+    const sessions=store.get('sessions')||[];
+    sessions.push({token,userId:u.id,exp:Date.now()+7*864e5});
+    store.set('sessions',sessions);
+    store.set('token',token);                           // remembered session
+    return {token,handle:u.handle};
+  }
+  async function logout(token){
+    store.set('sessions',(store.get('sessions')||[]).filter(s=>s.token!==token));
+    store.set('token',null);
+  }
+  async function me(token){const u=userFromToken(token);return u?{handle:u.handle}:null}
+  function publicProject(rec){                          // blind-seller projection
+    return {id:rec.id,maker:rec.pseudonym,title:rec.title,year:rec.year,
+      micro:(rec.textile||'').split('·')[0].trim()||'materials undisclosed',
+      textile:rec.textile,dims:rec.dims,price:rec.price,story:rec.story,care:rec.care,
+      img:rec.img||null,user:true};
+  }
+  async function createListing(token,data){
+    const u=userFromToken(token);
+    if(!u)throw new Error('Your session has dissolved. Sign in again.');
+    const rec={id:uid(),sellerRef:u.id,                 // private — never published
+      pseudonym:String(data.pseudonym||'').trim()||u.handle,
+      title:String(data.title||'').trim()||'Untitled hanging',
+      year:String(data.year||new Date().getFullYear()).trim(),
+      textile:String(data.textile||'Materials not disclosed').trim(),
+      dims:String(data.dims||'—').trim(),
+      price:String(data.price||'Upon request').trim(),
+      story:String(data.story||'No statement was filed; the cloth speaks for its house.').trim(),
+      care:String(data.care||'Treat as an heirloom · dry clean only').trim(),
+      img:data.img||null,created:Date.now()};
+    const listings=store.get('listings')||[];
+    listings.push(rec);
+    if(!store.set('listings',listings))throw new Error('The vault is full — try a smaller image.');
+    return publicProject(rec);
+  }
+  async function publicListings(){return (store.get('listings')||[]).map(publicProject)}
+  async function myListings(token){
+    const u=userFromToken(token);if(!u)return[];
+    return (store.get('listings')||[]).filter(l=>l.sellerRef===u.id).map(publicProject);
+  }
+  function savedToken(){return store.get('token')||null}
+  return {register,login,logout,me,createListing,publicListings,myListings,savedToken};
+})();
+window.LUVRE_API=LUVRE_API; // exposed for external tooling / testing
+
+/* ---------- deterministic randomness & noise ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function hash2i(x,y,s){let h=Math.imul(x|0,374761393)+Math.imul(y|0,668265263)+Math.imul(s|0,1442695041);h=h^h>>>13;h=Math.imul(h,1274126177);h^=h>>>16;return(h>>>0)/4294967296}
+function vnoise(x,y,s){const xi=Math.floor(x),yi=Math.floor(y),xf=x-xi,yf=y-yi;
+  const u=xf*xf*(3-2*xf),v=yf*yf*(3-2*yf);
+  const a=hash2i(xi,yi,s),b=hash2i(xi+1,yi,s),c=hash2i(xi,yi+1,s),d=hash2i(xi+1,yi+1,s);
+  return a+(b-a)*u+(c-a)*v+(a-b-c+d)*u*v}
+function fbm(x,y,s,o){let v=0,a=.5,f=1,t=0;for(let i=0;i<o;i++){v+=a*vnoise(x*f,y*f,s+i*77);t+=a;a*=.5;f*=2.03}return v/t}
+const clamp=(v,a,b)=>v<a?a:v>b?b:v;
+const pad=n=>String(n).padStart(2,'0');
+const $=id=>document.getElementById(id);
+
+/* ---------- the seed collection (admin-curated hangings) ---------- */
+const SEED=[
+ {seed:911,   maker:'Maison Verrière',    title:'Reliquary Drap',  year:2025, micro:'madder & iron on silk',
+  textile:'Mulberry silk, 22 momme · cut on the bias · hand-rolled hem', dims:'96 × 158 cm', price:'€ 3,900',
+  story:'Dyed in a single bath of madder and iron, folded wet and left to sleep for eleven days. The creases you see are the record of that rest — the house calls it the memory of the cloth.',
+  care:'Dry clean only · fold in acid-free tissue',
+  pal:[[52,14,18],[118,34,38],[186,92,78],[104,30,34],[38,12,14]], accent:[214,150,96], foldN:11, pins:5, warp:1.2, sheen:60},
+ {seed:4127,  maker:'Atelier Ondine',     title:'Tide Study Nº 4', year:2024, micro:'four indigos, one warp',
+  textile:'Indigo-dyed silk twill, 9.2 mm · rolled selvedge', dims:'104 × 150 cm', price:'€ 4,200',
+  story:'A single warp passed four times through indigo of decreasing strength, so the colour deepens like water taking light. It was worn once, for one hour, at low tide.',
+  care:'Dry clean only · keep from direct light',
+  pal:[[16,24,48],[40,58,102],[94,122,170],[36,50,86],[14,20,40]], accent:[176,206,232], foldN:8, pins:4, warp:.8, sheen:78},
+ {seed:77,    maker:'House of Salt',      title:'Vespers',         year:2023, micro:'loom-state raw silk',
+  textile:'Raw silk noil · loom-state edges · undyed', dims:'112 × 162 cm', price:'€ 2,850',
+  story:'Undyed raw silk from the last vertical mill on the coast. Nothing was corrected; every slub and knot stands exactly where the loom left it.',
+  care:'Hand wash cold, dry flat · never iron the slubs',
+  pal:[[150,132,104],[204,188,158],[234,224,200],[172,152,120],[126,110,86]], accent:[240,232,208], foldN:12, pins:6, warp:1.3, sheen:34},
+ {seed:2601,  maker:'Studio Callais',     title:'Patina II',        year:2025, micro:'salt-fixed patina',
+  textile:'Cotton lamé with copper weft · patina arrested in sea salt', dims:'98 × 146 cm', price:'€ 5,100',
+  story:'Copper thread buried in sea-salt and yarrow for a season, then hung to stop the green exactly where it had arrived. The result cannot be repeated; it was not attempted.',
+  care:'Do not wash · the patina is the piece',
+  pal:[[14,44,36],[38,96,76],[104,156,122],[52,116,88],[20,58,46]], accent:[198,124,72], foldN:9, pins:4, warp:1.0, sheen:26},
+ {seed:883,   maker:'Atelier Brume',     title:'Ash Liturgy',      year:2022, micro:'rain-washed wool–silk',
+  textile:'Wool–silk, 62 / 38 · washed in collected rain', dims:'108 × 156 cm', price:'€ 3,300',
+  story:'A charcoal warp crossed with a bone weft, washed in rain gathered from the workshop roof. The grey is not dyed; it is allowed.',
+  care:'Dry clean only · air for a day each season',
+  pal:[[224,218,206],[178,170,156],[64,60,56],[150,142,130],[210,204,192]], accent:[112,106,98], foldN:7, pins:3, warp:.7, sheen:20},
+ {seed:1543,  maker:'Maison Solaire',    title:'Hour of the Lion',  year:2024, micro:'double-dyed saffron',
+  textile:'Lampas-weave silk · double-dyed saffron and madder', dims:'100 × 152 cm', price:'€ 4,600',
+  story:'Saffron and madder layered while the vat was deliberately too hot. The weaver records the minute the colour broke: 15:40, late August.',
+  care:'Dry clean only · the saffron fades proudly',
+  pal:[[112,52,18],[196,110,38],[236,168,86],[158,78,26],[84,38,14]], accent:[244,196,120], foldN:10, pins:5, warp:1.15, sheen:64},
+ {seed:3366,  maker:'Compagnie Minérale', title:'Sterling Rite',   year:2023, micro:'true metallic thread',
+  textile:'Silver lamé on slate silk ground · weighted hem', dims:'92 × 144 cm', price:'€ 6,800',
+  story:'True metallic thread on a slate ground, woven so slowly the loom was said to be thinking. It holds light the way stone holds rain — briefly, and all at once.',
+  care:'Surface wipe only · avert perfume',
+  pal:[[104,112,124],[168,178,192],[224,232,240],[136,144,158],[78,84,96]], accent:[238,246,252], foldN:13, pins:6, warp:1.35, sheen:92},
+];
+let pieces=[];                       // seed + everything the public hangs
+const WORDS=['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+const VLBL=['I — The hanging','II — Counter view','III — Macro · weave','IV — Macro · dye'];
+
+/* ---------- procedural emerald marble ---------- */
+function paintMarble(canvas){
+  const iw=innerWidth,ih=innerHeight;
+  let mw=Math.min(860,Math.max(460,Math.round(iw*.55)));
+  let mh=Math.max(240,Math.round(mw*ih/iw));
+  canvas.width=mw;canvas.height=mh;
+  const x=canvas.getContext('2d');
+  const img=x.createImageData(mw,mh),d=img.data,S=4021;
+  let q=0;
+  for(let j=0;j<mh;j++){
+    for(let i=0;i<mw;i++){
+      const nx=i*.0038,ny=j*.0038;
+      const q1=fbm(nx*1.7,ny*1.7,S,4);
+      const t=Math.pow(1-Math.abs(Math.sin(nx*1.15+ny*.5+(q1-.5)*8.5)),4);
+      const q2=fbm(nx*2.7+7.7,ny*2.7+3.1,S+31,3);
+      const t2=Math.pow(1-Math.abs(Math.sin(nx*2.4-ny*1.35+(q2-.5)*9)),10)*.55;
+      const patch=fbm(nx*.55+13,ny*.55+5,S+77,3);
+      const gx=i/mw,gy=j/mh;
+      let r=5+11*patch+5*(1-gy), g=13+23*patch+7*(1-gy), b=10+17*patch+6*(1-gy);
+      const vm=t*(.45+.55*q1);  r+=34*vm; g+=84*vm; b+=64*vm;
+      const fm=t2*(.35+.65*q2); r+=66*fm; g+=128*fm; b+=102*fm;
+      const diag=Math.max(0,gx*.72+gy*.5-.55)*.55;
+      const vg=1-.4*Math.pow(Math.min(1,Math.hypot(gx-.5,(gy-.46)*1.15)*1.9),2);
+      const k=(1-diag)*vg;
+      d[q]=r*k;d[q+1]=g*k;d[q+2]=b*k;d[q+3]=255;q+=4;
+    }
+  }
+  x.putImageData(img,0,0);
+}
+
+/* ---------- generative textile renderer (seed pieces) ----------
+   variant 0: primary drape · 1: counter drape · 2: macro weave · 3: macro dye */
+function renderGarment(p,variant,W,H){
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  const img=ctx.createImageData(W,H),d=img.data;
+  const seed=(p.seed*2654435761^variant*97531)>>>0;
+  const R=mulberry32(seed);
+  const zoom=variant>=2?(variant===2?3.4:2.7):1, span=1/zoom;
+  const cx=zoom>1?0.40+R()*0.20:0.5, cy=zoom>1?0.38+R()*0.20:0.5;
+  const mirrored=variant===1;
+  const foldN=p.foldN*(mirrored?0.8:1);
+  const warpA=p.warp*(mirrored?1.3:1);
+  const phOff=variant*1.9+R()*6.283;
+  const lightTilt=(mirrored?-1:1)*(0.09+R()*0.05);
+  const jit=[];for(let k=0;k<24;k++)jit.push((R()-0.5)*1.5);
+  const dyePh=R()*6.283,driftF=1.2+R()*1.4,driftA=0.16+R()*0.14;
+  const cloudS=(p.seed%997)+variant*131,cloudA=0.45+R()*0.3;
+  const sheenPh=R()*6.283,sheenF=2.2+R()*1.6;
+  const sheenAmt=(variant>=2?(variant===2?15:30):p.sheen)*(mirrored?0.75:1);
+  const threads=120+(R()*30|0);
+  const threadA=variant===2?32:variant===3?9:5.5;
+  const blobs=[],nb=variant===3?3:2;
+  for(let k=0;k<nb;k++)blobs.push({x:.3+R()*.4,y:.26+R()*.42,r:.16+R()*.2,a:.3+R()*.3,c:variant===2?p.pal[2]:p.accent});
+  const pal=p.pal,pins=p.pins,sd=seed&1023,stitch=variant===0;
+
+  function rampCol(t){
+    const n=pal.length;t=t-Math.floor(t);
+    const f=t*n,i=f|0,fr=f-i,a=pal[i%n],b=pal[(i+1)%n];
+    return[a[0]+(b[0]-a[0])*fr,a[1]+(b[1]-a[1])*fr,a[2]+(b[2]-a[2])*fr];
+  }
+  let q=0;
+  for(let py=0;py<H;py++){
+    const fy=py/H;
+    for(let px=0;px<W;px++){
+      const fx=px/W;
+      const u=cx+(fx-0.5)*span, v=cy+(fy-0.5)*span;
+      let alpha=255,dTop=1,ed=1,hem=1;
+      if(zoom===1){
+        const hw=0.335*(1+0.05*Math.sin(v*4.2+1.7)+0.05*(vnoise(v*2.1,3.3,21)-.5));
+        const top=0.05+0.026*(1-Math.cos(6.2832*u*pins));
+        hem=0.955-0.02*vnoise(u*4.4,3.1,55)-0.012*Math.sin(u*7+2);
+        const edr=Math.min(hw-Math.abs(u-0.5),v-top,hem-v);
+        if(edr<=0){q+=4;continue}
+        const ew=0.006;
+        if(edr<ew)alpha=255*edr/ew;
+        ed=Math.min(1,edr/0.05);
+        dTop=Math.min(1,(v-top)/0.16);
+      }
+      const drift=Math.sin(u*driftF*3.1416+dyePh)*driftA;
+      const cloud=(fbm(u*2.3+cloudS*.011,v*2.7+cloudS*.017,cloudS,3)-.5)*cloudA;
+      const c=rampCol(v*1.12+drift+cloud);
+      for(let k=0;k<blobs.length;k++){
+        const b=blobs[k],dd=Math.hypot(u-b.x,(v-b.y)*1.15);
+        if(dd<b.r){const w=1-dd/b.r,kk=w*w*(3-2*w)*b.a;
+          c[0]+=(b.c[0]-c[0])*kk;c[1]+=(b.c[1]-c[1])*kk;c[2]+=(b.c[2]-c[2])*kk}
+      }
+      const ju=jit[Math.min(23,Math.abs(u*24)|0)]*Math.sin(v*1.7+1.3);
+      const sh=Math.sin(u*foldN*6.2832+warpA*Math.sin(v*2.6+phOff)+ju+(mirrored?3.1416:0));
+      let lum=1+sh*(0.15+0.11*(1-v));
+      lum*=1.05-v*0.26+lightTilt*(u-0.5)*2;
+      const swv=Math.sin(u*sheenF*3.1416+v*1.9+sheenPh);
+      if(swv>0)lum+=Math.pow(swv,16)*(sheenAmt/90);
+      lum*=0.5+0.5*dTop;
+      lum*=0.55+0.45*ed;
+      if(stitch){
+        const band=v-(hem-0.045);
+        if(band>0&&band<0.007&&Math.sin(u*150+1)>0.15)lum*=0.7;
+      }
+      let th=Math.pow(Math.abs(Math.sin(3.14159*v*threads)),1.6)*(0.55+0.8*hash2i(v*threads|0,7,sd));
+      th+=Math.pow(Math.abs(Math.sin(3.14159*u*threads*1.9)),1.6)*0.4;
+      const tAdd=(th-0.8)*threadA*(0.35+0.65*Math.min(lum,1.4));
+      const g=(hash2i(px,py,sd)-.5)*7;
+      const r0=c[0]*lum+tAdd+g,g0=c[1]*lum+tAdd+g,b0=c[2]*lum+tAdd+g;
+      d[q]=r0<0?0:r0>255?255:r0;d[q+1]=g0<0?0:g0>255?255:g0;d[q+2]=b0<0?0:b0>255?255:b0;
+      d[q+3]=alpha;q+=4;
+    }
+  }
+  ctx.putImageData(img,0,0);
+  return cv;
+}
+
+/* ---------- uploaded-image plates (public consignments) ----------
+   v0: cover-fit full view · v1: re-framed view · v2/v3: true macro crops */
+function loadImgEl(p){return new Promise((res,rej)=>{
+  if(p._imgEl)return res(p._imgEl);
+  const im=new Image();
+  im.onload=()=>{p._imgEl=im;res(im)};
+  im.onerror=()=>rej(new Error('image'));
+  im.src=p.img;
+})}
+async function imagePlate(p,variant,W,H){
+  const im=await loadImgEl(p);
+  const c=document.createElement('canvas');c.width=W;c.height=H;
+  const x=c.getContext('2d');
+  x.fillStyle='#070b09';x.fillRect(0,0,W,H);
+  if(variant===0){
+    const s=Math.max(W/im.width,H/im.height);
+    x.drawImage(im,(W-im.width*s)/2,(H-im.height*s)/2,im.width*s,im.height*s);
+  }else{
+    const Z=[0,1.28,2.9,2.4][variant];
+    const C=[0,[.42,.38],[.5,.5],[.68,.72]][variant];
+    const cw=im.width/Z,ch=im.height/Z;
+    const cx=clamp(im.width*C[0]-cw/2,0,Math.max(0,im.width-cw));
+    const cy=clamp(im.height*C[1]-ch/2,0,Math.max(0,im.height-ch));
+    x.drawImage(im,cx,cy,cw,ch,0,0,W,H);
+  }
+  return c;
+}
+/* downscale an uploaded file into a storable plate */
+function fileToPlate(file){
+  return new Promise((res,rej)=>{
+    if(!/^image\//.test(file.type))return rej(new Error('not an image'));
+    const url=URL.createObjectURL(file);
+    const im=new Image();
+    im.onload=()=>{
+      try{
+        const MAX=960,s=Math.min(1,MAX/Math.max(im.width,im.height));
+        const c=document.createElement('canvas');
+        c.width=Math.max(1,Math.round(im.width*s));
+        c.height=Math.max(1,Math.round(im.height*s));
+        const x=c.getContext('2d');
+        x.fillStyle='#070b09';x.fillRect(0,0,c.width,c.height);
+        x.drawImage(im,0,0,c.width,c.height);
+        res({url:c.toDataURL('image/jpeg',.85)});
+      }catch(err){rej(err)}finally{URL.revokeObjectURL(url)}
+    };
+    im.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('would not open'))};
+    im.src=url;
+  });
+}
+
+/* ---------- auto-frame engine: dominant-colour extraction ----------
+   Works identically on generated canvases and uploaded photographs. */
+function extractPalette(srcCanvas){
+  const w=48,h=60,c=document.createElement('canvas');c.width=w;c.height=h;
+  const x=c.getContext('2d');x.drawImage(srcCanvas,0,0,w,h);
+  const data=x.getImageData(0,0,w,h).data;
+  const buckets=new Map();
+  for(let i=0;i<data.length;i+=4){
+    if(data[i+3]<128)continue;
+    const key=(data[i]>>4)<<8|(data[i+1]>>4)<<4|(data[i+2]>>4);
+    let e=buckets.get(key);if(!e){e={n:0,r:0,g:0,b:0};buckets.set(key,e)}
+    e.n++;e.r+=data[i];e.g+=data[i+1];e.b+=data[i+2];
+  }
+  const sorted=[...buckets.values()].sort((a,b)=>b.n-a.n).map(e=>[e.r/e.n,e.g/e.n,e.b/e.n]);
+  const picks=[];
+  for(const s of sorted){
+    if(picks.length>=3)break;
+    let ok=true;
+    for(const pck of picks)if(Math.hypot(s[0]-pck[0],s[1]-pck[1],s[2]-pck[2])<70){ok=false;break}
+    if(ok)picks.push(s);
+  }
+  while(picks.length<3)picks.push(sorted[0]||[60,140,110]);
+  return picks;
+}
+function applyFrame(art,pal){
+  const dom=pal[0],acc=pal[1]||dom;
+  const lift=c=>c.map(v=>Math.round(v+(250-v)*.45));
+  const line=lift(acc),dv=dom.map(v=>v|0),hi=dom.map(v=>Math.round(v*.08+5));
+  const s=art.style;
+  s.setProperty('--l',`rgb(${line})`);
+  s.setProperty('--l-soft',`rgba(${line},.38)`);
+  s.setProperty('--l-line',`rgba(${line},.16)`);
+  s.setProperty('--dom',`rgba(${dv},.5)`);
+  s.setProperty('--dom2',`rgba(${dv},.18)`);
+  s.setProperty('--matHi',`rgb(${hi})`);
+}
+
+/* ---------- stage construction ---------- */
+const track=$('track'),stage=$('stage');
+const slideEls=[],wrapEls=[],capEls=[];
+function buildSlide(p,i){
+  const s=document.createElement('div');
+  s.className='slide';s.style.left=(i*100)+'%';s.dataset.i=i;
+  s.innerHTML=`
+    <div class="inner">
+      <div class="art-wrap">
+        <div class="art"><i class="deco"></i><div class="mat"><i class="mat-bg"></i></div></div>
+        <div class="plaque">Veil — N° ${pad(i+1)}</div>
+      </div>
+      <div class="caption">
+        <span class="cap-no">N° ${pad(i+1)} · one of one</span>
+        <h2 class="cap-maker">${p.maker}</h2>
+        <p class="cap-title">${p.title}</p>
+        <span class="cap-rule"></span>
+        <span class="cap-year">${p.year} — ${p.micro}</span>
+      </div>
+    </div>`;
+  track.appendChild(s);
+  slideEls.push(s);wrapEls.push(s.querySelector('.art-wrap'));capEls.push(s.querySelector('.caption'));
+}
+async function renderPiece(i){
+  const p=pieces[i];
+  if(p._pal||p._pending)return;
+  p._pending=true;
+  try{
+    const art=slideEls[i].querySelector('.art');
+    const cv=p.img?await imagePlate(p,0,560,700):renderGarment(p,0,560,700);
+    p._mainCv=cv;
+    art.querySelector('.mat').appendChild(cv);
+    p._pal=extractPalette(cv);          // the frame is derived from the artwork itself
+    applyFrame(art,p._pal);
+  }finally{p._pending=false}
+}
+function refreshCollectionLabel(){
+  $('colSub').textContent='Veil — '+(WORDS[pieces.length]||pieces.length)+' hangings';
+}
+function addPiece(p){
+  pieces.push(p);
+  buildSlide(p,pieces.length-1);
+  $('tot').textContent=pad(pieces.length);
+  refreshCollectionLabel();
+  renderPiece(pieces.length-1);
+  dirty=true;
+}
+
+/* ---------- gallery motion (drag / glide / parallax) ---------- */
+let current=0,dirty=true,glide=null,drag=null,lastIdx=-1,hintHidden=false;
+const bgWrap=$('bgWrap'),barFill=$('barFill'),idxEl=$('idx');
+function apply(){
+  const vw=innerWidth;
+  track.style.transform=`translate3d(${(-current*vw).toFixed(2)}px,0,0)`;
+  bgWrap.style.transform=`translate3d(${(-current*10).toFixed(1)}px,0,0)`;
+  for(let i=0;i<pieces.length;i++){
+    const off=current-i,a=Math.abs(off);
+    if(a>1.35||!pieces[i]._pal){slideEls[i].style.visibility='hidden';continue}
+    slideEls[i].style.visibility='visible';
+    wrapEls[i].style.transform=`translate3d(${(off*-6).toFixed(2)}vw,0,0) scale(${(1-Math.min(a*.05,.08)).toFixed(3)})`;
+    capEls[i].style.transform=`translate3d(${(off*-26).toFixed(2)}vw,0,0)`;
+    capEls[i].style.opacity=Math.max(0,1-Math.max(0,a-.14)*2.2).toFixed(3);
+  }
+  barFill.style.transform=`scaleX(${(clamp(current,0,pieces.length-1)/(pieces.length-1)).toFixed(4)})`;
+  const ci=Math.round(clamp(current,0,pieces.length-1));
+  if(ci!==lastIdx){
+    lastIdx=ci;idxEl.textContent=pad(ci+1);
+    $('navPrev').classList.toggle('off',ci<=0);
+    $('navNext').classList.toggle('off',ci>=pieces.length-1);
+  }
+}
+function glideTo(t){
+  t=clamp(t,0,pieces.length-1);
+  const from=current,d=t-from,t0=performance.now(),dur=clamp(420+Math.abs(d)*260,420,900);
+  glide=now=>{
+    const p=Math.min(1,(now-t0)/dur);
+    current=from+d*(1-Math.pow(1-p,4));dirty=true;
+    if(p>=1)glide=null;
+  };
+}
+function loop(now){
+  if(glide)glide(now);
+  if(dirty){apply();dirty=false}
+  requestAnimationFrame(loop);
+}
+function hideHint(){if(hintHidden)return;hintHidden=true;$('hint').classList.add('gone')}
+
+stage.addEventListener('pointerdown',e=>{
+  if(overlayOpen||veilOpen)return;
+  if(e.pointerType==='mouse'&&e.button!==0)return;
+  drag={x0:e.clientX,y0:e.clientY,t0:performance.now(),i:current,moved:false,
+        tgt:e.target.closest('.art-wrap'),lv:{x:e.clientX,t:performance.now()}};
+  stage.setPointerCapture(e.pointerId);
+});
+stage.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-drag.x0,dy=e.clientY-drag.y0;
+  if(!drag.moved&&Math.hypot(dx,dy)>7)drag.moved=true;
+  if(!drag.moved)return;
+  drag.lv={x:e.clientX,t:performance.now()};
+  let raw=drag.i-dx/innerWidth;
+  if(raw<0)raw*=.32;else if(raw>pieces.length-1)raw=(pieces.length-1)+(raw-(pieces.length-1))*.32;
+  current=raw;dirty=true;hideHint();
+});
+stage.addEventListener('pointerup',()=>{
+  if(!drag)return;
+  const d=drag;drag=null;
+  if(!d.moved){
+    if(d.tgt&&!overlayOpen&&!veilOpen)openDossier(Math.round(clamp(current,0,pieces.length-1)));
+    return;
+  }
+  const dt=d.lv.t-d.t0;
+  const v=dt>0?(d.lv.x-d.x0)/dt:0;
+  let tgt;
+  if(v<-.32)tgt=Math.ceil(current-.08);
+  else if(v>.32)tgt=Math.floor(current+.08);
+  else tgt=Math.round(current);
+  glideTo(tgt);
+});
+stage.addEventListener('pointercancel',()=>{drag=null});
+
+let wheelLock=0;
+addEventListener('wheel',e=>{
+  if(overlayOpen||veilOpen)return;
+  const dx=e.deltaX,dy=e.deltaY;
+  if(Math.abs(dx)>10&&Math.abs(dx)>Math.abs(dy)){
+    const now=performance.now();
+    if(now<wheelLock)return;
+    wheelLock=now+700;
+    glideTo(Math.round(current)+(dx>0?1:-1));hideHint();
+    e.preventDefault();
+  }
+},{passive:false});
+
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    if(veilOpen)closeVeil();
+    else if(overlayOpen)closeDossier();
+    return;
+  }
+  if(veilOpen)return;
+  if(overlayOpen){
+    if(e.key==='ArrowRight')gStep(1);
+    if(e.key==='ArrowLeft')gStep(-1);
+    return;
+  }
+  if(e.key==='ArrowRight'){glideTo(Math.round(current)+1);hideHint()}
+  if(e.key==='ArrowLeft'){glideTo(Math.round(current)-1);hideHint()}
+});
+ $('navPrev').addEventListener('click',()=>{glideTo(Math.round(current)-1);hideHint()});
+ $('navNext').addEventListener('click',()=>{glideTo(Math.round(current)+1);hideHint()});
+addEventListener('resize',()=>{dirty=true;if(overlayOpen)applyG()});
+
+/* ---------- dossier (FLIP expansion) ---------- */
+const dossier=$('dossier'),dPanel=$('dPanel'),gStage=$('gStage'),gTrack=$('gTrack'),
+      gDots=$('gDots'),gLabel=$('gLabel'),gIdxEl=$('gIdx'),enqBtn=$('enquire');
+let overlayOpen=false,dossierIndex=0,flipArt=null;
+let gCur=0,gLast=-1,gDrag=null,gAnim=null;
+
+function applyG(){
+  gTrack.style.transform=`translate3d(${(-gCur*gStage.clientWidth).toFixed(1)}px,0,0)`;
+  const gi=Math.round(clamp(gCur,0,3));
+  if(gi!==gLast){
+    gLast=gi;
+    gLabel.textContent=VLBL[gi];
+    gIdxEl.textContent=(gi+1)+' / 4';
+    [...gDots.children].forEach((d,k)=>d.classList.toggle('on',k===gi));
+  }
+}
+function gGlide(t){
+  t=clamp(t,0,3);
+  if(gAnim)cancelAnimationFrame(gAnim);
+  const from=gCur,d=t-from,t0=performance.now();
+  const step=now=>{
+    const p=Math.min(1,(now-t0)/460);
+    gCur=from+d*(1-Math.pow(1-p,3));applyG();
+    if(p<1)gAnim=requestAnimationFrame(step);else{gCur=t;applyG()}
+  };
+  gAnim=requestAnimationFrame(step);
+}
+function gStep(dir){gGlide(Math.round(clamp(gCur,0,3))+dir)}
+ $('gPrev').addEventListener('click',()=>gStep(-1));
+ $('gNext').addEventListener('click',()=>gStep(1));
+
+gStage.addEventListener('pointerdown',e=>{
+  gDrag={x0:e.clientX,y0:e.clientY,t0:performance.now(),base:gCur,moved:false,
+         lv:{x:e.clientX,t:performance.now()}};
+  gStage.setPointerCapture(e.pointerId);
+});
+gStage.addEventListener('pointermove',e=>{
+  if(!gDrag)return;
+  const dx=e.clientX-gDrag.x0,dy=e.clientY-gDrag.y0;
+  if(!gDrag.moved&&Math.hypot(dx,dy)>7)gDrag.moved=true;
+  if(!gDrag.moved)return;
+  gDrag.lv={x:e.clientX,t:performance.now()};
+  if(Math.abs(dx)>Math.abs(dy))gCur=clamp(gDrag.base-dx/gStage.clientWidth,0,3);
+  applyG();
+});
+gStage.addEventListener('pointerup',e=>{
+  if(!gDrag)return;
+  const d=gDrag;gDrag=null;
+  if(!d.moved)return;
+  const dy=e.clientY-d.y0,dx=e.clientX-d.x0;
+  if(dy>70&&Math.abs(dy)>Math.abs(dx)){closeDossier();return}
+  const dt=d.lv.t-d.t0,v=dt>0?(d.lv.x-d.x0)/dt:0;
+  let t;
+  if(v<-.32)t=Math.ceil(gCur-.05);
+  else if(v>.32)t=Math.floor(gCur+.05);
+  else t=Math.round(gCur);
+  gGlide(t);
+});
+gStage.addEventListener('pointercancel',()=>{gDrag=null});
+
+async function buildGallery(i){
+  const p=pieces[i];
+  if(!p._vars)p._vars=[];
+  gTrack.innerHTML='';gDots.innerHTML='';
+  for(let v=0;v<4;v++)gDots.appendChild(document.createElement('span'));
+  for(let v=0;v<4;v++){
+    const item=document.createElement('div');
+    item.className='g-item';
+    item.innerHTML='<div class="art"><i class="deco"></i><div class="mat"><i class="mat-bg"></i></div></div>';
+    let cv=p._vars[v];
+    if(!cv){
+      if(p.img)cv=await imagePlate(p,v,640,800);
+      else if(v===0&&p._mainCv){cv=document.createElement('canvas');cv.width=640;cv.height=800;
+        cv.getContext('2d').drawImage(p._mainCv,0,0,640,800)}
+      else cv=renderGarment(p,v,640,800);
+      p._vars[v]=cv;
+    }
+    item.querySelector('.mat').appendChild(cv);
+    applyFrame(item.querySelector('.art'),p._pal);
+    gTrack.appendChild(item);
+  }
+  gCur=0;gLast=-1;applyG();
+}
+function fillPanel(p,i){
+  $('dOver').textContent=`Dossier · N° ${pad(i+1)} — Veil Collection`;
+  $('dMaison').textContent=p.maker;
+  $('dTitle').innerHTML=`<em>${p.title}</em> — ${p.year}`;
+  $('dStory').textContent=p.story;
+  $('dSpecs').innerHTML=
+    `<div><dt>Textile</dt><dd>${p.textile}</dd></div>`+
+    `<div><dt>Dimensions</dt><dd>${p.dims}</dd></div>`+
+    `<div><dt>Edition</dt><dd>1 of 1 · signed in thread</dd></div>`+
+    `<div><dt>Provenance</dt><dd>${p.user?'£UVR€ Vault · deposited by the house':'£UVR€ Vault · Geneva'}</dd></div>`+
+    `<div><dt>Care</dt><dd>${p.care}</dd></div>`;
+  $('dPrice').textContent=p.price;
+  enqBtn.disabled=false;enqBtn.textContent='Enquire';
+}
+async function openDossier(i){
+  if(overlayOpen||!pieces[i]._pal)return;
+  overlayOpen=true;dossierIndex=i;
+  const p=pieces[i];
+  fillPanel(p,i);
+  await buildGallery(i);
+  dossier.hidden=false;
+  requestAnimationFrame(()=>dossier.classList.add('open'));
+  // FLIP: artwork grows out of its frame; the frame scales up and dissolves
+  const srcArt=slideEls[i].querySelector('.art');
+  flipArt=gTrack.children[0].querySelector('.art');
+  const src=srcArt.getBoundingClientRect();
+  const dst=flipArt.getBoundingClientRect();
+  flipArt.style.transition='none';
+  flipArt.style.transformOrigin='0 0';
+  flipArt.style.transform=`translate(${src.left-dst.left}px,${src.top-dst.top}px) scale(${src.width/dst.width},${src.height/dst.height})`;
+  void flipArt.offsetWidth;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    flipArt.style.transition='transform .9s var(--curve)';
+    flipArt.style.transform='none';
+    flipArt.classList.add('ghost');
+    dPanel.classList.add('in');
+  }));
+}
+function closeDossier(){
+  if(!overlayOpen)return;
+  gCur=0;applyG();
+  const flip=flipArt;
+  const src=slideEls[dossierIndex].querySelector('.art').getBoundingClientRect();
+  const dst=flip.getBoundingClientRect();
+  dossier.classList.remove('open');
+  dPanel.classList.remove('in');
+  flip.style.transition='transform .85s var(--curve)';
+  flip.style.transform=`translate(${src.left-dst.left}px,${src.top-dst.top}px) scale(${src.width/dst.width},${src.height/dst.height})`;
+  setTimeout(()=>flip.classList.remove('ghost'),300);
+  setTimeout(()=>{
+    dossier.hidden=true;overlayOpen=false;
+    flip.style.transform='';flip.style.transition='';
+  },950);
+}
+ $('dClose').addEventListener('click',closeDossier);
+
+enqBtn.addEventListener('click',()=>{
+  if(enqBtn.disabled)return;
+  enqBtn.disabled=true;enqBtn.textContent='Routed…';
+  setTimeout(()=>toast('Your inquiry rests with the curatorial desk. The maker remains unnamed.'),420);
+  setTimeout(()=>{enqBtn.disabled=false;enqBtn.textContent='Enquire'},2800);
+});
+
+/* ---------- atelier portal: accounts & posting ---------- */
+const consign=$('consign'),veilOpenBtn=$('consignOpen'),
+      regForm=$('regForm'),logForm=$('logForm'),postForm=$('postForm'),
+      postFile=$('postFile'),fileLine=$('fileLine'),filePrev=$('filePrev');
+let veilOpen=false,session=null,prevUrl=null;
+
+document.querySelectorAll('.ptab').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.ptab').forEach(x=>x.classList.toggle('on',x===b));
+  regForm.hidden=b.dataset.auth!=='new';
+  logForm.hidden=b.dataset.auth!=='ret';
+}));
+function renderPortal(){
+  $('authBox').hidden=!!session;
+  $('deskBox').hidden=!session;
+  if(session){
+    $('deskHandle').textContent=session.handle;
+    veilOpenBtn.textContent='Atelier';
+  }else veilOpenBtn.textContent='Consign';
+}
+function openVeil(){veilOpen=true;consign.hidden=false;requestAnimationFrame(()=>consign.classList.add('on'))}
+function closeVeil(){consign.classList.remove('on');setTimeout(()=>{consign.hidden=true;veilOpen=false},480)}
+veilOpenBtn.addEventListener('click',openVeil);
+ $('consignClose').addEventListener('click',closeVeil);
+consign.addEventListener('click',e=>{if(e.target===consign.querySelector('.veil-bg'))closeVeil()});
+
+regForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(regForm);
+  $('regMsg').textContent='';
+  try{
+    session=await LUVRE_API.register({handle:fd.get('handle'),contact:fd.get('contact'),pass:fd.get('pass')});
+    renderPortal();regForm.reset();
+    toast('The atelier recognizes you. Your name is safe — it was never taken.');
+  }catch(err){$('regMsg').textContent=err.message}
+});
+logForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const fd=new FormData(logForm);
+  $('logMsg').textContent='';
+  try{
+    session=await LUVRE_API.login({handle:fd.get('handle'),pass:fd.get('pass')});
+    renderPortal();logForm.reset();
+    toast('Welcome back. The vault kept your secrets.');
+  }catch(err){$('logMsg').textContent=err.message}
+});
+ $('signOut').addEventListener('click',async()=>{
+  if(session)await LUVRE_API.logout(session.token);
+  session=null;renderPortal();
+});
+postFile.addEventListener('change',()=>{
+  const f=postFile.files&&postFile.files[0];
+  if(f){
+    fileLine.textContent=f.name;
+    if(/^image\//.test(f.type)){
+      if(prevUrl)URL.revokeObjectURL(prevUrl);
+      prevUrl=URL.createObjectURL(f);
+      filePrev.src=prevUrl;filePrev.hidden=false;
+    }
+  }else{
+    fileLine.textContent='select a photograph of the piece';
+    filePrev.hidden=true;
+  }
+});
+postForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!session)return;
+  const fd=new FormData(postForm);
+  const pseudonym=String(fd.get('pseudonym')||'').trim(),
+        title=String(fd.get('title')||'').trim();
+  const postMsg=$('postMsg');
+  postMsg.textContent='';
+  if(!pseudonym||!title){postMsg.textContent='A house and a title, at minimum.';return}
+  const file=postFile.files&&postFile.files[0];
+  if(!file){postMsg.textContent='The piece needs a plate image.';return}
+  postMsg.textContent='Preparing the plate…';
+  let img;
+  try{img=(await fileToPlate(file)).url}
+  catch(err){postMsg.textContent='That image would not open.';return}
+  let listing;
+  try{
+    listing=await LUVRE_API.createListing(session.token,{
+      pseudonym,title,year:fd.get('year'),textile:fd.get('textile'),dims:fd.get('dims'),
+      price:fd.get('price'),story:fd.get('story'),care:fd.get('care'),img});
+  }catch(err){postMsg.textContent=err.message;return}
+  // hang it, then walk the room to it
+  addPiece(listing);
+  postForm.reset();
+  fileLine.textContent='select a photograph of the piece';
+  filePrev.hidden=true;
+  closeVeil();
+  glideTo(pieces.length-1);
+  toast(`N° ${pad(pieces.length)} now hangs in the gallery. The house remains unnamed.`);
+});
+
+/* ---------- toasts ---------- */
+function toast(msg){
+  const t=document.createElement('div');
+  t.className='toast';t.textContent=msg;
+  $('toasts').appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('on')));
+  setTimeout(()=>{t.classList.remove('on');setTimeout(()=>t.remove(),500)},4200);
+}
+
+/* ---------- boot ---------- */
+(async function boot(){
+  paintMarble($('marble'));                       // the room is built first
+  const userListings=await LUVRE_API.publicListings();
+  pieces=[...SEED,...userListings];               // admin seed + public consignments
+  pieces.forEach((p,i)=>buildSlide(p,i));
+  $('tot').textContent=pad(pieces.length);
+  refreshCollectionLabel();
+  const t=LUVRE_API.savedToken();                 // restore a remembered session
+  if(t){const me=await LUVRE_API.me(t);if(me)session={token:t,handle:me.handle}}
+  renderPortal();
+  document.body.classList.add('ready');
+  apply();
+  requestAnimationFrame(loop);
+  let i=1;
+  (function next(){
+    if(i>=pieces.length)return;
+    setTimeout(()=>{renderPiece(i++);dirty=true;next()},150);
+  })();
+})();
+</script>
+</body>
+</html>

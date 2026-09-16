@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>£UVR€ — Veil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Josefin+Sans:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+
+<!-- SVG filter: living texture for the laser wordmark -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="laserFx" x="-30%" y="-80%" width="160%" height="260%">
+    <feTurbulence type="fractalNoise" baseFrequency="0.002 0.09" numOctaves="2" seed="11" result="n">
+      <animate attributeName="baseFrequency" dur="9s" values="0.002 0.09;0.0045 0.12;0.002 0.09" repeatCount="indefinite"/>
+    </feTurbulence>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<!-- emerald marble, rendered procedurally -->
+<div id="bgWrap" aria-hidden="true">
+  <canvas id="marble"></canvas>
+  <div class="bg-shade"></div>
+</div>
+
+<header class="hud top">
+  <div class="corner left">Collection N° 1<span class="sub" id="colSub">Veil — hangings</span></div>
+  <div class="logo-wrap"><h1 class="logo" id="wordmark" aria-label="LUVRE">£UVR€</h1></div>
+  <div class="corner right"><button class="consign-link" id="consignOpen" title="Atelier portal — unlisted route" hidden>Atelier</button></div>
+</header>
+
+<main id="stage" aria-label="Gallery"><div id="track"></div></main>
+
+<button class="nav" id="navPrev" aria-label="Previous piece">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M15 4 7 12l8 8"/></svg>
+</button>
+<button class="nav" id="navNext" aria-label="Next piece">
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 4l8 8-8 8"/></svg>
+</button>
+
+<footer class="hud bottom">
+  <div class="corner left" id="hint">drag to wander — tap a piece for its dossier</div>
+  <div class="meter"><span id="idx">01</span><i class="bar"><b id="barFill"></b></i><span id="tot">00</span></div>
+  <div class="corner right">every maker remains unnamed</div>
+</footer>
+
+<!-- expanded dossier -->
+<section class="dossier" id="dossier" role="dialog" aria-modal="true" aria-label="Piece dossier" hidden>
+  <div class="d-backdrop"></div>
+  <button class="d-close" id="dClose" aria-label="Close dossier">
+    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+  </button>
+  <div class="d-body">
+    <div class="d-art">
+      <div class="g-hud"><span class="g-label" id="gLabel"></span><span id="gIdx"></span></div>
+      <div id="gStage"><div id="gTrack"></div></div>
+      <div class="g-ctrl">
+        <button class="g-arrow" id="gPrev" aria-label="Previous view">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M15 4 7 12l8 8"/></svg>
+        </button>
+        <div class="g-dots" id="gDots"></div>
+        <button class="g-arrow" id="gNext" aria-label="Next view">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M9 4l8 8-8 8"/></svg>
+        </button>
+      </div>
+      <p class="g-hint"><span class="d-only">drag the work to turn it · esc to return</span><span class="m-only">drag sideways to turn · pull down to return</span></p>
+    </div>
+    <div class="d-panel" id="dPanel">
+      <span class="p-over" style="--d:0" id="dOver"></span>
+      <h2 class="p-maison" style="--d:1" id="dMaison"></h2>
+      <p class="p-title" style="--d:2" id="dTitle"></p>
+      <p class="p-story" style="--d:3" id="dStory"></p>
+      <dl class="p-specs" style="--d:4" id="dSpecs"></dl>
+      <div class="p-offer" style="--d:5">
+        <span class="p-price" id="dPrice"></span>
+        <button class="p-enquire" id="enquire">Enquire</button>
+      </div>
+      <p class="p-note" style="--d:6">Inquiries route to the curatorial desk. The maker is never named — not to buyers, not in print.</p>
+    </div>
+  </div>
+</section>
+
+<!-- unlisted atelier portal: the studio's two keys, no public registration -->
+<div class="veil" id="consign" role="dialog" aria-modal="true" aria-label="Atelier portal" hidden>
+  <div class="veil-bg"></div>
+  <div class="sheet">
+    <button class="v-close" id="consignClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+    <span class="s-over">Unlisted portal</span>
+    <h3>The atelier door</h3>
+    <p class="s-copy">This door keeps two keys — the founders'. Buyers need none; a commission is a guest of the house, never an account.</p>
+
+    <div id="authBox">
+      <form id="studioForm" novalidate>
+        <label class="f-field"><span>Studio contact</span><input name="email" autocomplete="username"></label>
+        <label class="f-field"><span>Key</span><input name="pass" type="password" autocomplete="current-password"></label>
+        <p class="form-msg" id="studioMsg" role="status"></p>
+        <button class="btn-line" type="submit">Enter the studio</button>
+      </form>
+    </div>
+
+      <div id="deskBox" hidden>
+      <div class="desk-head">
+        <span>signed in · <b id="deskHandle"></b> — never published</span>
+        <button class="so" id="signOut" type="button">sign out</button>
+      </div>
+      <div id="orderDesk"></div>
+      <form id="postForm" novalidate>
+        <label class="f-field"><span>House pseudonym — published</span><input name="pseudonym" autocomplete="off"></label>
+        <label class="f-field"><span>Title of the piece</span><input name="title" autocomplete="off"></label>
+        <div class="f-grid">
+          <label class="f-field"><span>Year</span><input name="year" autocomplete="off"></label>
+          <label class="f-field"><span>Price · whole CAD dollars</span><input name="price" autocomplete="off"></label>
+        </div>
+        <label class="f-field"><span>Textile</span><input name="textile" autocomplete="off"></label>
+        <label class="f-field"><span>Dimensions</span><input name="dims" autocomplete="off"></label>
+        <label class="f-field"><span>Statement</span><textarea name="story" rows="3"></textarea></label>
+        <label class="f-field"><span>Care</span><input name="care" autocomplete="off"></label>
+        <label class="f-field"><span>Plate image *</span>
+          <input type="file" id="postFile" accept="image/*" hidden>
+          <span class="file-line" id="fileLine">select a photograph of the piece</span>
+          <img class="file-prev" id="filePrev" alt="" hidden>
+        </label>
+        <p class="form-msg" id="postMsg" role="status"></p>
+        <button class="btn-line" type="submit">Hang it in the gallery</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- a commission: guest checkout, no accounts -->
+<div class="veil" id="acquire" role="dialog" aria-modal="true" aria-label="Commission" hidden>
+  <div class="veil-bg"></div>
+  <div class="sheet">
+    <button class="v-close" id="acquireClose" aria-label="Close">
+      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
+    </button>
+    <span class="s-over">A commission</span>
+    <h3 id="acTitle"></h3>
+    <p class="s-copy" id="acPrice"></p>
+
+    <div id="acForm">
+      <label class="f-field"><span>The road</span></label>
+      <div id="acMethods" style="margin-bottom:20px">
+        <label style="display:block;margin-bottom:10px;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="method" value="interac" checked> Interac e-Transfer — the piece is held for you for 48 hours</label>
+        <label style="display:block;margin-bottom:10px;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="method" value="paypal"> PayPal — settle at once, among PayPal's walls</label>
+        <label style="display:block;margin-bottom:10px;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="method" value="crypto"> Crypto — settled on-chain, confirmed before it is yours</label>
+        <label style="display:block;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="method" value="on_delivery"> Pay at the handover — Montréal only, cash or tap</label>
+      </div>
+      <label class="f-field"><span>Your name</span><input name="name" autocomplete="name"></label>
+      <label class="f-field"><span>Where the desk can reach you</span><input name="email" autocomplete="email"></label>
+      <label class="f-field"><span>Telephone — only if you like (optional)</span><input name="phone" autocomplete="tel"></label>
+      <div id="acMeet" hidden>
+        <label class="f-field"><span>The quarter where you would like to meet</span>
+          <input name="area" list="acAreas" autocomplete="off"></label>
+        <datalist id="acAreas">
+          <option value="Plateau"></option><option value="Mile End"></option>
+          <option value="Downtown"></option><option value="Old Montreal"></option>
+          <option value="Villeneuve"></option>
+        </datalist>
+        <label class="f-field"><span>An hour that suits you</span><input name="window" autocomplete="off"></label>
+      </div>
+      <p class="form-msg" id="acMsg" role="status"></p>
+      <button class="btn-line" id="acSubmit" type="button">Open the commission</button>
+    </div>
+
+    <div id="acDone" hidden>
+      <p class="s-over">Kept for you</p>
+      <h3 id="acRef" style="letter-spacing:.18em"></h3>
+      <p class="s-copy" id="acInstr"></p>
+      <p><a class="btn-line" id="acContinue" hidden style="display:inline-block;text-decoration:none">Continue to PayPal</a></p>
+      <p class="form-msg">Keep this reference — it is the only key to your commission.</p>
+      <label class="f-field"><span>Commission number</span><input id="acLookId" autocomplete="off"></label>
+      <label class="f-field"><span>Reference</span><input id="acLookCode" autocomplete="off"></label>
+      <p class="form-msg" id="acStatus" role="status"></p>
+      <button class="btn-line" id="acCheck" type="button">Ask after it</button>
+    </div>
+  </div>
+</div>
+
+<script src="/static/app.js"></script>
+<script src="/static/studio.js"></script>
+</body>
+</html>

@@ -1,0 +1,79 @@
+# £UVR€ — production stack (M6): app + Postgres + Caddy (automatic HTTPS).
+#
+# Secrets live in the HOST environment (or a host-side .env beside this
+# file that is never committed). Required on the host:
+#   DOMAIN, SECRET_KEY, POSTGRES_PASSWORD
+# Recommended: INTERAC_TRANSFER_EMAIL, PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID,
+#   COINBASE_API_KEY/WEBHOOK_SECRET (or the BTPAY_* set).
+#
+#   DOMAIN=luvre.ca SECRET_KEY=$(openssl rand -hex 32) \
+#     POSTGRES_PASSWORD=$(openssl rand -hex 24) \
+#     docker compose up -d --build
+
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: luvre
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD on the host}
+      POSTGRES_DB: luvre
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U luvre"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: ..
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV: prod
+      SECRET_KEY: ${SECRET_KEY:?set SECRET_KEY on the host}
+      DATABASE_URL: postgresql+psycopg://luvre:${POSTGRES_PASSWORD}@db:5432/luvre
+      MEDIA_DIR: /data/media
+      PUBLIC_BASE_URL: https://${DOMAIN:?set DOMAIN on the host}
+      ORDER_TTL_HOURS: ${ORDER_TTL_HOURS:-48}
+      PAYPAL_ENV: ${PAYPAL_ENV:-sandbox}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID:-}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET:-}
+      PAYPAL_WEBHOOK_ID: ${PAYPAL_WEBHOOK_ID:-}
+      CRYPTO_PROVIDER: ${CRYPTO_PROVIDER:-coinbase}
+      COINBASE_API_KEY: ${COINBASE_API_KEY:-}
+      COINBASE_WEBHOOK_SECRET: ${COINBASE_WEBHOOK_SECRET:-}
+      BTPAY_URL: ${BTPAY_URL:-}
+      BTPAY_API_KEY: ${BTPAY_API_KEY:-}
+      BTPAY_STORE_ID: ${BTPAY_STORE_ID:-}
+      BTPAY_WEBHOOK_SECRET: ${BTPAY_WEBHOOK_SECRET:-}
+      INTERAC_TRANSFER_EMAIL: ${INTERAC_TRANSFER_EMAIL:-}
+    volumes:
+      - mediadata:/data/media
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')\""]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddydata:/data
+      - caddyconfig:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  mediadata:
+  caddydata:
+  caddyconfig:
