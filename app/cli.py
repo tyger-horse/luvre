@@ -18,6 +18,7 @@ MAX_FOUNDERS = 2
 def create_founder(
     email: str, password: str, display_name: str = "", session_factory=None
 ) -> User:
+    email = email.strip().lower()
     if session_factory is None:
         init_db()
         session_factory = SessionLocal
@@ -38,12 +39,29 @@ def create_founder(
         return user
 
 
+def change_password(email: str, password: str, session_factory=None) -> User:
+    email = email.strip().lower()
+    if session_factory is None:
+        init_db()
+        session_factory = SessionLocal
+    with session_factory() as db:
+        user = db.scalar(select(User).where(User.email == email))
+        if user is None:
+            raise SystemExit(f"No studio account for {email}.")
+        user.password_hash = hash_password(password)
+        db.commit()
+        db.refresh(user)
+        return user
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="£UVR€ studio administration")
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("create-founder", help="Create a studio (founder) account")
     p.add_argument("email")
     p.add_argument("--name", default="")
+    c = sub.add_parser("change-password", help="Set a new studio password")
+    c.add_argument("email")
     args = parser.parse_args()
     if args.cmd == "create-founder":
         password = getpass.getpass("Studio password: ")
@@ -51,6 +69,12 @@ def main() -> None:
             raise SystemExit("Use at least 12 characters.")
         user = create_founder(args.email, password, args.name)
         print(f"Studio account ready for {user.email}.")
+    elif args.cmd == "change-password":
+        password = getpass.getpass("New studio password: ")
+        if len(password) < 12:
+            raise SystemExit("Use at least 12 characters.")
+        user = change_password(args.email, password)
+        print(f"New key cut for {user.email}.")
 
 
 if __name__ == "__main__":

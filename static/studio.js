@@ -33,6 +33,8 @@ function revealDoor(){
 (function knock(){
   let taps=[],timer=null;
   const mark=()=>{revealDoor();openVeil()};
+  // Belt and braces: the door starts shut even if the browser cached an old page.
+  $('consignOpen').hidden=true;
   document.querySelector('.logo-wrap').addEventListener('click',()=>{
     const now=performance.now();
     taps=taps.filter(t=>now-t<1200);taps.push(now);

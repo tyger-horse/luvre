@@ -171,12 +171,13 @@ def health():
 
 @app.post("/api/auth/login", response_model=TokenOut)
 def login(body: LoginIn, db: Session = Depends(get_db)):
-    check_login_allowed(body.email)
-    user = db.scalar(select(User).where(User.email == body.email))
+    email = body.email.strip().lower()
+    check_login_allowed(email)
+    user = db.scalar(select(User).where(User.email == email))
     if user is None or not verify_password(body.password, user.password_hash):
-        record_login_failure(body.email)
+        record_login_failure(email)
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Those details do not open the studio.")
-    record_login_success(body.email)
+    record_login_success(email)
     return TokenOut(access_token=create_access_token(user.id))
 
 
