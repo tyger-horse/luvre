@@ -1,46 +1,47 @@
 'use strict';
-/* £UVR€ studio — the atelier door. Studio-only: the demo's open
-   registration is intentionally retired (AGENTS.md §2.5). The two
-   founders sign in, hang drafts with real photographs, and keep the
-   commissions desk (mark-paid / schedule / complete / cancel).
-   Buyers never hold accounts.
+/* £UVR€ studio — the atelier desk. No accounts: the knock is the whole
+   key. Three touches on the wordmark reveal the entry; three touches
+   on the entry open the desk. The money roads already pay Raph
+   directly, so there is nothing here to steal but the hanging itself.
    Shares globals with app.js (classic scripts): $, pad, toast,
    addPiece, glideTo, pieces, LUVRE_API. */
-var veilOpen=false,session=null;
+var veilOpen=false;
 
 const consign=$('consign');
-const studioForm=$('studioForm'),studioMsg=$('studioMsg');
 const postForm=$('postForm'),postFile=$('postFile'),
       fileLine=$('fileLine'),filePrev=$('filePrev'),
       orderDesk=$('orderDesk');
 let prevUrl=null;
 
-function studioHeaders(extra){
-  return Object.assign({Authorization:'Bearer '+session.token},extra||{});
-}
 function renderPortal(){
-  $('authBox').hidden=!!session;
-  $('deskBox').hidden=!session;
-  if(session)$('deskHandle').textContent=session.handle;
+  $('deskBox').hidden=false;
+  refreshDesk();
 }
-/* The door is unlisted: no visible entry. Three touches on the
-   wordmark within a breath reveal it for the session; the #atelier
-   road opens it straight away. Tell Raph privately — never in print. */
+function openVeil(){veilOpen=true;consign.hidden=false;requestAnimationFrame(()=>consign.classList.add('on'));refreshDesk()}
+function closeVeil(){consign.classList.remove('on');setTimeout(()=>{consign.hidden=true;veilOpen=false},480)}
+$('consignClose').addEventListener('click',closeVeil);
+consign.addEventListener('click',e=>{if(e.target===consign.querySelector('.veil-bg'))closeVeil()});
+
+/* The knock, twice: three touches on the wordmark reveal the entry;
+   three touches on the entry open the desk. */
 function revealDoor(){
   $('consignOpen').hidden=false;
   try{sessionStorage.setItem('luvre.door','1')}catch(e){}
 }
-(function knock(){
+function triple(el,fn){
   let taps=[],timer=null;
-  const mark=()=>{revealDoor();openVeil()};
-  // Belt and braces: the door starts shut even if the browser cached an old page.
-  $('consignOpen').hidden=true;
-  document.querySelector('.logo-wrap').addEventListener('click',()=>{
+  el.addEventListener('click',()=>{
     const now=performance.now();
     taps=taps.filter(t=>now-t<1200);taps.push(now);
     clearTimeout(timer);timer=setTimeout(()=>{taps=[]},1300);
-    if(taps.length>=3){taps=[];mark()}
+    if(taps.length>=3){taps=[];fn()}
   });
+}
+(function knock(){
+  // Belt and braces: the door starts shut even if the browser cached an old page.
+  $('consignOpen').hidden=true;
+  triple(document.querySelector('.logo-wrap'),()=>{revealDoor();openVeil()});
+  triple($('consignOpen'),openVeil);
   try{
     if(sessionStorage.getItem('luvre.door')==='1')revealDoor();
   }catch(e){}
@@ -49,26 +50,6 @@ function revealDoor(){
     history.replaceState(null,'',location.pathname+location.search);
   }
 })();
-function openVeil(){veilOpen=true;consign.hidden=false;requestAnimationFrame(()=>consign.classList.add('on'));refreshDesk()}
-function closeVeil(){consign.classList.remove('on');setTimeout(()=>{consign.hidden=true;veilOpen=false},480)}
-$('consignOpen').addEventListener('click',openVeil);
-$('consignClose').addEventListener('click',closeVeil);
-consign.addEventListener('click',e=>{if(e.target===consign.querySelector('.veil-bg'))closeVeil()});
-
-studioForm.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const fd=new FormData(studioForm);
-  studioMsg.textContent='';
-  try{
-    session=await LUVRE_API.login({email:String(fd.get('email')||'').trim(),pass:fd.get('pass')});
-    renderPortal();studioForm.reset();
-    toast('Welcome back. The vault kept your secrets.');
-  }catch(err){studioMsg.textContent=err.message}
-});
-$('signOut').addEventListener('click',async()=>{
-  if(session)await LUVRE_API.logout(session.token);
-  session=null;renderPortal();
-});
 postFile.addEventListener('change',()=>{
   const f=postFile.files&&postFile.files[0];
   if(f){
@@ -85,7 +66,6 @@ postFile.addEventListener('change',()=>{
 });
 postForm.addEventListener('submit',async e=>{
   e.preventDefault();
-  if(!session)return;
   const fd=new FormData(postForm);
   const postMsg=$('postMsg');
   postMsg.textContent='';
@@ -110,7 +90,7 @@ postForm.addEventListener('submit',async e=>{
   postMsg.textContent='Hanging it…';
   let created;
   try{
-    const res=await fetch('/api/pieces',{method:'POST',headers:studioHeaders(),body:out});
+    const res=await fetch('/api/pieces',{method:'POST',body:out});
     if(!res.ok)throw new Error((await res.json()).detail||'The gallery refused the hanging.');
     created=await res.json();
   }catch(err){postMsg.textContent=err.message;return}
@@ -129,16 +109,15 @@ const DESK_WORDS={created:'opened',awaiting_payment:'awaiting the transfer',rese
   paid:'settled',handover_scheduled:'the hour is named',completed:'handed over',cancelled:'released',refunded:'returned'};
 async function deskAction(id,verb,body){
   const r=await fetch(`/api/studio/orders/${id}/${verb}`,{method:'POST',
-    headers:studioHeaders(body?{'Content-Type':'application/json'}:{}),
+    headers:body?{'Content-Type':'application/json'}:{},
     body:body?JSON.stringify(body):undefined});
   if(!r.ok)toast((await r.json()).detail||'The desk refused.');
   refreshDesk();
 }
 async function refreshDesk(){
-  if(!session)return;
   let all=[];
   try{
-    const res=await fetch('/api/studio/orders',{headers:studioHeaders()});
+    const res=await fetch('/api/studio/orders');
     if(res.ok)all=await res.json();
   }catch(e){return}
   orderDesk.innerHTML='';
@@ -157,6 +136,11 @@ async function refreshDesk(){
     const amount=(o.amount_cents/100).toLocaleString('en-CA',{maximumFractionDigits:0});
     sub.textContent=` — ${o.buyer_name} · CAD ${amount} · ${DESK_WORDS[o.status]||o.status}`;
     label.append(b,sub);
+    if(o.handover_area||o.handover_window){
+      const meet=document.createElement('span');
+      meet.textContent=` · meet: ${[o.handover_area,o.handover_window].filter(Boolean).join(' — ')}`;
+      label.appendChild(meet);
+    }
     if(o.tx_hash){
       const proof=document.createElement('span');
       const coin=(o.pay_currency||'eth').toUpperCase();
@@ -169,11 +153,6 @@ async function refreshDesk(){
       proof.append(' · chain proof ',link);
       proof.style.wordBreak='break-all';
       label.appendChild(proof);
-    }
-    if(o.handover_area||o.handover_window){
-      const meet=document.createElement('span');
-      meet.textContent=` · meet: ${[o.handover_area,o.handover_window].filter(Boolean).join(' — ')}`;
-      label.appendChild(meet);
     }
     const btns=document.createElement('span');
     btns.style.cssText='display:flex;gap:10px;flex-wrap:wrap';

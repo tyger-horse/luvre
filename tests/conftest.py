@@ -13,10 +13,9 @@ from sqlalchemy.pool import StaticPool
 
 import pytest
 
-from app.auth import hash_password
 from app.db import get_db
 from app.main import app, project_piece
-from app.models import Base, Piece, PieceImage, User
+from app.models import Base, Piece, PieceImage
 
 engine = create_engine(
     "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
@@ -50,23 +49,9 @@ def client(db):
 
 
 @pytest.fixture()
-def founder(db):
-    user = User(
-        email="studio@luvre.example",
-        password_hash=hash_password("atelier-password-long"),
-        role="founder",
-        display_name="Atelier",
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-@pytest.fixture()
-def published_piece(db, founder):
+def published_piece(db):
     piece = Piece(
-        seller_user_id=founder.id,
+        seller_user_id=None,
         pseudonym="atelier nord",
         title="Veste de minuit",
         year=2024,
@@ -95,10 +80,7 @@ def published_piece(db, founder):
 
 
 @pytest.fixture()
-def auth_headers(client, founder):
-    res = client.post(
-        "/api/auth/login",
-        json={"email": "studio@luvre.example", "password": "atelier-password-long"},
-    )
-    assert res.status_code == 200, res.text
-    return {"Authorization": f"Bearer {res.json()['access_token']}"}
+def auth_headers():
+    # No accounts: the knock is the only door. Endpoints ignore auth,
+    # so tests pass empty headers straight through.
+    return {}

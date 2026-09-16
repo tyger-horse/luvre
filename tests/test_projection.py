@@ -30,7 +30,7 @@ def test_list_projection_exact_keys(client, published_piece):
     _assert_no_seller_keys(items)
 
 
-def test_detail_projection_hides_seller(client, published_piece, founder):
+def test_detail_projection_hides_seller(client, published_piece):
     res = client.get(f"/api/pieces/{published_piece.id}")
     assert res.status_code == 200, res.text
     piece = res.json()
@@ -50,11 +50,11 @@ def test_sold_status_projects_but_never_drafts(client, db, published_piece):
     assert set(res.json().keys()) == set(PUBLIC_PIECE_KEYS)
 
 
-def test_drafts_invisible_publicly(client, db, founder, published_piece):
+def test_drafts_invisible_publicly(client, db, published_piece):
     from app.models import Piece
 
     draft = Piece(
-        seller_user_id=founder.id,
+        seller_user_id=None,
         pseudonym="secret",
         title="Unseen",
         price_cents=100,
@@ -68,9 +68,9 @@ def test_drafts_invisible_publicly(client, db, founder, published_piece):
     assert client.get(f"/api/pieces/{draft.id}").status_code == 404
 
 
-@pytest.mark.parametrize("path", ["/api/me", "/api/pieces"])
-def test_studio_routes_need_auth(client, path):
-    if path == "/api/me":
-        assert client.get(path).status_code == 401
-    else:
-        assert client.post(path, json={"title": "X"}).status_code == 401
+def test_studio_desk_open_without_accounts(client):
+    # No accounts: the knock is the only door. The desk answers directly.
+    assert client.get("/api/studio/orders").status_code == 200
+    assert client.get("/api/studio/pieces").status_code == 200
+    res = client.post("/api/pieces", json={"title": "X"})
+    assert res.status_code == 201

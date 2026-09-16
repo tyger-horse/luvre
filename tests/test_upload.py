@@ -90,8 +90,8 @@ def test_rejects_float_price_and_fifth_view(client, auth_headers, db, media_dir)
     assert res.status_code == 400
 
 
-def test_studio_list_needs_auth(client, auth_headers, db, media_dir):
-    assert client.get("/api/studio/pieces").status_code == 401
+def test_studio_list_open(client, auth_headers, db, media_dir):
+    assert client.get("/api/studio/pieces").status_code == 200
     upload(client, auth_headers)
     res = client.get("/api/studio/pieces", headers=auth_headers)
     assert res.status_code == 200

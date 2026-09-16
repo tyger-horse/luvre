@@ -6,6 +6,12 @@ RETIRED = (
     "auth/register",      # demo's local-transport route
     "Any house may hold a key",
     "House handle",
+    "Enter the studio",   # retired login form
+    "Studio contact",
+    "studioForm",
+    "deskHandle",
+    "signOut",
+    "savedToken",
 )
 
 REQUIRED = (

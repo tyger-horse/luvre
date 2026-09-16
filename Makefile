@@ -3,6 +3,3 @@ test:
 
 run:
 	uvicorn app.main:app --reload
-
-founder:
-	python -m app.cli create-founder

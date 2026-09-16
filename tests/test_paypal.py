@@ -9,9 +9,9 @@ from app.payments import paypal as paypal_provider
 
 
 @pytest.fixture()
-def wall_piece(db, founder):
+def wall_piece(db):
     piece = Piece(
-        seller_user_id=founder.id,
+        seller_user_id=None,
         pseudonym="atelier nord",
         title="Veste de minuit",
         year=2024,

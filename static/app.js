@@ -16,8 +16,6 @@
    window.LUVRE_API is exposed for external tooling / testing.
    ===================================================================== */
 const LUVRE_API=(()=>{
-  const tokenKey='luvre.studio.token';
-  function savedToken(){try{return localStorage.getItem(tokenKey)}catch(e){return null}}
   function hexRgb(h){
     h=String(h||'').replace('#','');
     if(!/^[0-9a-fA-F]{6}$/.test(h))return null;
@@ -54,37 +52,16 @@ const LUVRE_API=(()=>{
     if(!res.ok)throw new Error('This piece is not on the wall.');
     return fromProjection(await res.json());
   }
-  async function login({email,pass}){
-    const res=await fetch('/api/auth/login',{method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({email:email,password:pass})});
-    if(!res.ok)throw new Error('Those details do not open the studio.');
-    const data=await res.json();
-    try{localStorage.setItem(tokenKey,data.access_token)}catch(e){}
-    return {token:data.access_token,handle:email};
-  }
-  async function logout(){
-    try{localStorage.removeItem(tokenKey)}catch(e){}
-  }
-  async function me(token){
-    const res=await fetch('/api/me',{headers:{Authorization:'Bearer '+token}});
-    if(!res.ok)return null;
-    const data=await res.json();
-    return {handle:data.email};
-  }
-  async function createListing(token,data){
+  async function createListing(data){
     const res=await fetch('/api/pieces',{method:'POST',
-      headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify(data)});
     if(!res.ok)throw new Error('The gallery refused the hanging.');
     return getPiece((await res.json()).id);
   }
-  async function myListings(){return []}   // the desk arrives with the order desk (M2)
-  async function register(){
-    throw new Error('The atelier keeps two keys; write to the curatorial desk to be considered.');
-  }
-  return {register,login,logout,me,createListing,publicListings,getPiece,
-    myListings,savedToken,fixtureParams,fromProjection};
+  async function myListings(){return []}   // the desk reads /api/studio/orders instead
+  return {createListing,publicListings,getPiece,
+    myListings,fixtureParams,fromProjection};
 })();
 window.LUVRE_API=LUVRE_API; // exposed for external tooling / testing
 

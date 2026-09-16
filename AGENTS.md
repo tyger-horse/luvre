@@ -481,24 +481,23 @@ is Montreal, and cheap to add later).
   config tolerates a schemeless `PUBLIC_BASE_URL`, both for Render's
   wiring. Production stays `deploy/` on the VPS.
 
-## 23. Founders (two keys, then locked)
+## 23. Access (no accounts — the knock is the key)
 
-- The studio admits exactly two founders: the owner and Raph.
-  `app/cli.py:MAX_FOUNDERS = 2` — `create-founder` refuses a third,
-  and there is no signup endpoint anywhere, so the cap is the whole
-  lock. `tests/test_founders.py` guards it; never delete or skip.
-- To seat Raph: run `python -m app.cli create-founder <his-email>
-  --name Raph` on the host and hand him the password privately
-  (12+ characters). He signs in through the Atelier door like you.
-- The door is unlisted: the HUD shows no entry. Three touches on the
-  £UVR€ wordmark within a breath reveal it for the session, and the
-  `#atelier` road opens it straight away
-  (`https://<host>/#atelier`). Tell Raph both privately — never in
-  print, never in a screenshot. The password stays the real lock;
-  the hidden door is manners. `test_door_is_unlisted` guards it.
-- The Interac deposit address (Raph's) lives only in host env
-  (`INTERAC_TRANSFER_EMAIL` in `.env`, Render dashboard, or compose
-  env) — never committed. Checkout instructions quote it verbatim.
+- There are no accounts, no passwords, no founder rows that matter:
+  `app/auth.py`, `app/cli.py`, and `tests/test_founders.py` were
+  deleted. Studio endpoints take no credentials; the money roads
+  already pay Raph directly, so the desk holds nothing worth stealing
+  but the hanging itself.
+- The door is unlisted twice over: three touches on the £UVR€
+  wordmark within a breath reveal the entry, and three touches on
+  the entry open the desk (`https://<host>/#atelier` opens it
+  straight away). Tell Raph privately — never in print, never in a
+  screenshot. `test_door_is_unlisted` guards it.
+- Plain truth, stated once: the knock keeps honest visitors out; it
+  does not stop anyone technical (the JS is readable, the endpoints
+  are open). This is the founders' explicit trade for a desk with
+  no login machinery. If real money ever demands more, say so and
+  the password lock returns.
 ````
 
 A few decisions I baked in that your coder should hear from you directly:

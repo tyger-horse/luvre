@@ -9,9 +9,9 @@ from app.services.orders import sweep_expired
 
 
 @pytest.fixture()
-def wall_piece(db, founder):
+def wall_piece(db):
     piece = Piece(
-        seller_user_id=founder.id,
+        seller_user_id=None,
         pseudonym="atelier nord",
         title="Veste de minuit",
         year=2024,
@@ -87,7 +87,7 @@ def test_checkout_validation(client, wall_piece, db):
 
 
 def test_studio_desk_full_passage(client, auth_headers, wall_piece, db):
-    assert client.get("/api/studio/orders").status_code == 401
+    assert client.get("/api/studio/orders").status_code == 200
     order = buy(client, wall_piece.id).json()
     oid = order["id"]
 

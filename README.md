@@ -9,14 +9,15 @@ operator's handbook.
 ## Run it locally
 
 ```sh
-cp .env.example .env            # then fill SECRET_KEY at least
+cp .env.example .env            # then fill the money addresses at least
 pip install -r requirements.txt # or: python -m venv .venv && .venv/bin/pip install -r requirements.txt
-python -m app.cli create-founder you@example.ca   # prompts for a password (12+ chars)
 uvicorn app.main:app --reload
 ```
 
-The wall hangs at `http://localhost:8000`. The atelier portal hides
-behind the **Atelier** link, top right. Tests: `make test` (or
+The wall hangs at `http://localhost:8000`. There are no accounts:
+knock three times on the £UVR€ wordmark, then three times on the
+revealed entry (or open `http://localhost:8000/#atelier` straight
+away) to reach the desk. Tests: `make test` (or
 `python -m pytest tests/ -q`).
 
 ## Free staging on Render
@@ -56,8 +57,6 @@ DOMAIN=luvre.ca SECRET_KEY=$(openssl rand -hex 32) \
   POSTGRES_PASSWORD=$(openssl rand -hex 24) \
   INTERAC_TRANSFER_EMAIL=transfers@luvre.ca \
   docker compose -f deploy/docker-compose.yml up -d --build
-docker compose -f deploy/docker-compose.yml exec app \
-  python -m app.cli create-founder you@example.ca
 ```
 
 Caddy terminates HTTPS automatically. The container runs

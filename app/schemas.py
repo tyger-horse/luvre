@@ -5,22 +5,6 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, StrictInt
 
 
-class LoginIn(BaseModel):
-    email: str
-    password: str
-
-
-class TokenOut(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-
-
-class MeOut(BaseModel):
-    id: int
-    email: str
-    display_name: str = ""
-
-
 # --- Public projection (§10). Exact key set — adding keys here is a leak. ---
 PUBLIC_PIECE_KEYS = frozenset(
     {

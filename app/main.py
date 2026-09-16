@@ -14,17 +14,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
-from app.auth import (
-    check_login_allowed,
-    create_access_token,
-    get_current_founder,
-    record_login_failure,
-    record_login_success,
-    verify_password,
-)
 from app.config import settings
 from app.db import SessionLocal, get_db, init_db
-from app.models import Order, PaymentEvent, Piece, PieceImage, User
+from app.models import Order, PaymentEvent, Piece, PieceImage
 from app.payments import paypal as paypal_provider
 from app.payments.crypto import (
     COINS,
@@ -36,8 +28,6 @@ from app.payments.crypto import (
 from app.payments.interac import transfer_instructions
 from app.payments.paypal import PayPalError, PayPalNotConfigured
 from app.schemas import (
-    LoginIn,
-    MeOut,
     OrderCreate,
     OrderStatusOut,
     PieceCreate,
@@ -48,7 +38,6 @@ from app.schemas import (
     StudioOrderOut,
     StudioPiece,
     StudioPieceImage,
-    TokenOut,
 )
 from app.services.background import (
     MAX_SLOTS,
@@ -161,29 +150,13 @@ def ensure_seed_data() -> None:
         db.commit()
 
 
-# --- Studio auth ---
+# --- Studio auth: retired. No accounts — the hidden knock is the only
+# door, and the money roads already pay Raph directly. ---
 
 
 @app.get("/api/health", include_in_schema=False)
 def health():
     return {"ok": True}
-
-
-@app.post("/api/auth/login", response_model=TokenOut)
-def login(body: LoginIn, db: Session = Depends(get_db)):
-    email = body.email.strip().lower()
-    check_login_allowed(email)
-    user = db.scalar(select(User).where(User.email == email))
-    if user is None or not verify_password(body.password, user.password_hash):
-        record_login_failure(email)
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Those details do not open the studio.")
-    record_login_success(email)
-    return TokenOut(access_token=create_access_token(user.id))
-
-
-@app.get("/api/me", response_model=MeOut)
-def me(user: User = Depends(get_current_founder)):
-    return MeOut(id=user.id, email=user.email, display_name=user.display_name)
 
 
 # --- Public gallery feed (projected; prices travel but render only in the dossier) ---
@@ -267,7 +240,6 @@ def _parse_int_field(value: str | None, name: str, required: bool = False) -> in
 async def create_piece(
     request: Request,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_founder),
 ):
     ctype = request.headers.get("content-type", "")
     if "multipart/form-data" in ctype:
@@ -309,7 +281,7 @@ async def create_piece(
         body = PieceCreate(**payload)
         datas = []
 
-    piece = Piece(seller_user_id=user.id, status="draft", **body.model_dump())
+    piece = Piece(seller_user_id=None, status="draft", **body.model_dump())
     db.add(piece)
     db.flush()
     for slot, data in enumerate(datas):
@@ -331,7 +303,7 @@ async def create_piece(
 
 
 @app.get("/api/studio/pieces", response_model=list[StudioPiece])
-def studio_pieces(db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def studio_pieces(db: Session = Depends(get_db)):
     pieces = db.scalars(
         select(Piece).options(selectinload(Piece.images)).order_by(Piece.id.desc())
     ).all()
@@ -628,14 +600,14 @@ def _desk_project(order: Order, db: Session) -> StudioOrderOut:
 
 
 @app.get("/api/studio/orders", response_model=list[StudioOrderOut])
-def studio_orders(db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def studio_orders(db: Session = Depends(get_db)):
     orders = db.scalars(select(Order).order_by(Order.id.desc())).all()
     return [_desk_project(o, db) for o in orders]
 
 
 @app.post("/api/studio/orders/{order_id}/mark-paid", response_model=StudioOrderOut)
 def studio_mark_paid(
-    order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)
+    order_id: int, db: Session = Depends(get_db)
 ):
     order = db.get(Order, order_id)
     if order is None:
@@ -654,7 +626,6 @@ def studio_schedule(
     order_id: int,
     body: ScheduleIn,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_founder),
 ):
     order = db.get(Order, order_id)
     if order is None:
@@ -674,7 +645,7 @@ def studio_schedule(
 
 @app.post("/api/studio/orders/{order_id}/complete", response_model=StudioOrderOut)
 def studio_complete(
-    order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)
+    order_id: int, db: Session = Depends(get_db)
 ):
     order = db.get(Order, order_id)
     if order is None:
@@ -690,7 +661,7 @@ def studio_complete(
 
 @app.post("/api/studio/orders/{order_id}/cancel", response_model=StudioOrderOut)
 def studio_cancel(
-    order_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)
+    order_id: int, db: Session = Depends(get_db)
 ):
     order = db.get(Order, order_id)
     if order is None:
@@ -705,7 +676,7 @@ def studio_cancel(
 
 
 @app.patch("/api/pieces/{piece_id}")
-def patch_piece(piece_id: int, body: PiecePatch, db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def patch_piece(piece_id: int, body: PiecePatch, db: Session = Depends(get_db)):
     piece = db.get(Piece, piece_id)
     if piece is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "No such piece.")
@@ -731,17 +702,17 @@ def _set_piece_status(piece_id: int, to: str, db: Session) -> dict:
 
 
 @app.post("/api/pieces/{piece_id}/publish")
-def publish_piece(piece_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def publish_piece(piece_id: int, db: Session = Depends(get_db)):
     return _set_piece_status(piece_id, "published", db)
 
 
 @app.post("/api/pieces/{piece_id}/retire")
-def retire_piece(piece_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def retire_piece(piece_id: int, db: Session = Depends(get_db)):
     return _set_piece_status(piece_id, "retired", db)
 
 
 @app.post("/api/pieces/{piece_id}/mark-sold")
-def mark_sold_piece(piece_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_founder)):
+def mark_sold_piece(piece_id: int, db: Session = Depends(get_db)):
     return _set_piece_status(piece_id, "sold", db)
 
 
