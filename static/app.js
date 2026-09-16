@@ -659,6 +659,8 @@ function openAcquire(p){
   $('acTitle').textContent=p.title+' — '+p.maker;
   $('acPrice').textContent='One of one · CAD '+dollars+' · '+p.year;
   $('acForm').hidden=false;$('acDone').hidden=true;$('acMsg').textContent='';
+  const _m=(document.querySelector('#acMethods input:checked')||{}).value;
+  $('acMeet').hidden=_m!=='on_delivery';$('acCoins').hidden=_m!=='crypto';
   acquireOpen=true;acquire.hidden=false;
   requestAnimationFrame(()=>acquire.classList.add('on'));
 }
@@ -666,7 +668,9 @@ function closeAcquire(){acquire.classList.remove('on');setTimeout(()=>{acquire.h
 $('acquireClose').addEventListener('click',closeAcquire);
 acquire.addEventListener('click',e=>{if(e.target===acquire.querySelector('.veil-bg'))closeAcquire()});
 document.querySelectorAll('#acMethods input').forEach(r=>r.addEventListener('change',()=>{
-  $('acMeet').hidden=document.querySelector('#acMethods input:checked').value!=='on_delivery';
+  const method=document.querySelector('#acMethods input:checked').value;
+  $('acMeet').hidden=method!=='on_delivery';
+  $('acCoins').hidden=method!=='crypto';
 }));
 $('acSubmit').addEventListener('click',async()=>{
   if(!acquirePiece)return;
@@ -679,6 +683,8 @@ $('acSubmit').addEventListener('click',async()=>{
   const window_=document.querySelector('#acquire input[name=window]').value.trim();
   if(!name||!email){msg.textContent='A name and a reachable contact, so the desk can find you.';return}
   if(method==='on_delivery'&&!area){msg.textContent='Choose the quarter where you would like to meet.';return}
+  const coin=method==='crypto'
+    ?(document.querySelector('#acCoins input:checked')||{}).value||'eth':null;
   msg.textContent='Opening the commission…';
   let order;
   try{
@@ -686,7 +692,8 @@ $('acSubmit').addEventListener('click',async()=>{
       body:JSON.stringify({piece_id:acquirePiece.id,method:method,buyer_name:name,
         buyer_email:email,buyer_phone:phone||null,
         handover_area:method==='on_delivery'?area:null,
-        handover_window:method==='on_delivery'?(window_||null):null})});
+        handover_window:method==='on_delivery'?(window_||null):null,
+        pay_currency:coin})});
     if(!res.ok)throw new Error((await res.json()).detail||'The commission would not open.');
     order=await res.json();
   }catch(err){msg.textContent=err.message;return}
@@ -700,8 +707,25 @@ $('acSubmit').addEventListener('click',async()=>{
   if(roadOut){cont.hidden=false;cont.href=roadOut;
     cont.textContent=order.method==='crypto'?'Continue to the charge':'Continue to PayPal'}
   else cont.hidden=true;
+  const proof=order.method==='crypto'&&order.status==='awaiting_payment'&&!order.tx_hash;
+  $('acProof').hidden=!proof;$('acHash').value='';$('acProofMsg').textContent='';
   $('acLookId').value=order.id;$('acLookCode').value=order.reference_code;
   $('acStatus').textContent='';
+});
+$('acSent').addEventListener('click',async()=>{
+  const id=$('acLookId').value.trim(),code=$('acLookCode').value.trim();
+  const hash=$('acHash').value.trim(),msg=$('acProofMsg');msg.textContent='';
+  if(!hash){msg.textContent='Paste the transaction hash first.';return}
+  try{
+    const res=await fetch(`/api/orders/${id}/tx-hash`,{method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code:code,tx_hash:hash})});
+    if(!res.ok)throw new Error((await res.json()).detail||'The proof would not keep.');
+    const o=await res.json();
+    $('acInstr').textContent=o.instructions||'';
+    $('acProof').hidden=true;
+    toast('Sent and kept. The desk is watching the chain.');
+  }catch(err){msg.textContent=err.message}
 });
 $('acCheck').addEventListener('click',async()=>{
   const id=$('acLookId').value.trim(),code=$('acLookCode').value.trim();
@@ -713,6 +737,9 @@ $('acCheck').addEventListener('click',async()=>{
     const o=await res.json();
     const meet=[o.handover_window,o.handover_place_note].filter(Boolean).join(' — ');
     out.textContent=`${o.reference_code} — ${AC_WORDS[o.status]||o.status}. `+(o.instructions||'')+(meet?` The hour: ${meet}.`:'');
+    const proof=o.method==='crypto'&&o.status==='awaiting_payment'&&!o.tx_hash;
+    $('acProof').hidden=!proof;
+    if(proof){$('acHash').value='';$('acProofMsg').textContent=''}
   }catch(err){out.textContent=err.message}
 });
 /* returning from PayPal's walls: the number travels in the road, the
@@ -724,6 +751,7 @@ function openReturnLookup(id,cancelled){
     :'The walls parted — ask after your commission with its reference.';
   $('acForm').hidden=true;$('acDone').hidden=false;
   $('acRef').textContent='';$('acInstr').textContent='';$('acContinue').hidden=true;
+  $('acProof').hidden=true;$('acHash').value='';
   $('acLookId').value=id;$('acLookCode').value='';$('acStatus').textContent='';
   acquireOpen=true;acquire.hidden=false;
   requestAnimationFrame(()=>acquire.classList.add('on'));

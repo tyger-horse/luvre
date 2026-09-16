@@ -37,6 +37,7 @@ DNS there.
 | Key | Meaning |
 |---|---|
 | `INTERAC_TRANSFER_EMAIL` | The e-Transfer deposit address quoted in checkout instructions |
+| `CRYPTO_ETH_ADDRESS` / `CRYPTO_BTC_ADDRESS` / `CRYPTO_USDC_ADDRESS` | Your wallets; buyers pick a coin, send, paste the tx hash — you verify on-chain, then mark paid |
 | `PAYPAL_ENV` (`sandbox`→`live`), `PAYPAL_CLIENT_ID/SECRET/WEBHOOK_ID` | PayPal road; register a sandbox webhook for `PAYMENT.CAPTURE.COMPLETED` first |
 | `CRYPTO_PROVIDER` (`coinbase`\|`btpay`), `COINBASE_API_KEY/WEBHOOK_SECRET`, `BTPAY_URL/API_KEY/STORE_ID/WEBHOOK_SECRET` | Crypto road; only `confirmed`/`InvoiceSettled` settles |
 

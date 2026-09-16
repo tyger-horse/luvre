@@ -155,6 +155,19 @@ async function refreshDesk(){
     const amount=(o.amount_cents/100).toLocaleString('en-CA',{maximumFractionDigits:0});
     sub.textContent=` — ${o.buyer_name} · CAD ${amount} · ${DESK_WORDS[o.status]||o.status}`;
     label.append(b,sub);
+    if(o.tx_hash){
+      const proof=document.createElement('span');
+      const coin=(o.pay_currency||'eth').toUpperCase();
+      const short=o.tx_hash.length>18?o.tx_hash.slice(0,12)+'…'+o.tx_hash.slice(-6):o.tx_hash;
+      const link=document.createElement('a');
+      const base=o.pay_currency==='btc'?'https://mempool.space/tx/':'https://etherscan.io/tx/';
+      link.href=base+o.tx_hash;link.target='_blank';link.rel='noopener';
+      link.textContent=`${coin} · ${short}`;
+      link.style.color='inherit';
+      proof.append(' · chain proof ',link);
+      proof.style.wordBreak='break-all';
+      label.appendChild(proof);
+    }
     if(o.handover_area||o.handover_window){
       const meet=document.createElement('span');
       meet.textContent=` · meet: ${[o.handover_area,o.handover_window].filter(Boolean).join(' — ')}`;

@@ -10,6 +10,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
 
@@ -24,11 +25,10 @@ from app.auth import (
 from app.config import settings
 from app.db import SessionLocal, get_db, init_db
 from app.models import Order, PaymentEvent, Piece, PieceImage, User
-from app.payments import crypto as crypto_provider
 from app.payments import paypal as paypal_provider
 from app.payments.crypto import (
-    CryptoError,
-    CryptoNotConfigured,
+    COINS,
+    deposit_address,
     is_confirmed,
     verify_btpay_signature,
     verify_coinbase_signature,
@@ -363,18 +363,20 @@ def order_instructions(order: Order, db: Session) -> str | None:
             "the desk confirms the hour."
         )
     if order.method == "crypto" and order.status == "awaiting_payment":
-        settling = db.scalar(
-            select(PaymentEvent.id).where(
-                PaymentEvent.order_id == order.id,
-                PaymentEvent.provider == "crypto",
-                PaymentEvent.event_type.in_(crypto_provider.PENDING_TYPES),
-            )
-        )
-        if settling is not None:
+        dollars = order.amount_cents / 100
+        if order.tx_hash:
             return (
-                "The chain is settling — seen, but not yet confirmed. "
+                "The desk has your proof and is watching the chain. "
                 "Only the confirmed settlement marks the piece yours."
             )
+        coin = (order.pay_currency or "eth").lower()
+        label = COINS.get(coin, COINS["eth"])["label"]
+        return (
+            f"Send CAD ${dollars:,.2f} worth of {label} to {deposit_address(coin)}, "
+            f"then press “sent” below and paste the transaction hash with {order.reference_code} "
+            "kept close. The piece is held for you for "
+            f"{ttl_hours()} hours."
+        )
     return None
 
 
@@ -395,6 +397,8 @@ def project_order(order: Order, db: Session) -> OrderStatusOut:
         piece_title=piece.title if piece else "",
         piece_pseudonym=piece.pseudonym if piece else "",
         instructions=order_instructions(order, db),
+        tx_hash=order.tx_hash,
+        pay_currency=order.pay_currency,
     )
 
 
@@ -415,6 +419,15 @@ def create_order(body: OrderCreate, db: Session = Depends(get_db)):
             status.HTTP_400_BAD_REQUEST,
             "Choose the quarter where you would like to meet.",
         )
+    if body.method == "crypto":
+        coin = (body.pay_currency or "").strip().lower()
+        if coin not in COINS:
+            raise HTTPException(
+                status.HTTP_400_BAD_REQUEST,
+                "Choose a coin — Ethereum, Bitcoin, or USD Coin.",
+            )
+    else:
+        coin = None
     piece = db.get(Piece, body.piece_id)
     if piece is None or piece.status != "published":
         raise HTTPException(status.HTTP_404_NOT_FOUND, "This piece is not on the wall.")
@@ -444,6 +457,7 @@ def create_order(body: OrderCreate, db: Session = Depends(get_db)):
         reference_code=reference,
         handover_area=(body.handover_area or "").strip() or None,
         handover_window=(body.handover_window or "").strip() or None,
+        pay_currency=coin,
         created_at=now,
         expires_at=now + timedelta(hours=ttl_hours()),
     )
@@ -468,22 +482,11 @@ def create_order(body: OrderCreate, db: Session = Depends(get_db)):
         approval_url: str | None = created["approval_url"]
         checkout_url: str | None = None
     elif body.method == "crypto":
-        try:
-            charge = crypto_provider.create_charge(
-                order_id=order.id,
-                reference_code=reference,
-                piece_title=piece.title,
-                amount_cents=piece.price_cents,
-            )
-        except CryptoNotConfigured as exc:
-            db.rollback()
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
-        except CryptoError as exc:
-            db.rollback()
-            raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(exc))
-        order.provider_ref = charge["provider_ref"]
+        # Manual wallet: the buyer sends to the deposit address, then
+        # pastes the transaction hash as proof. The desk verifies
+        # on-chain and marks paid — no provider, no hosted checkout.
         approval_url = None
-        checkout_url = charge["checkout_url"]
+        checkout_url = None
     else:
         approval_url = None
         checkout_url = None
@@ -501,6 +504,33 @@ def order_status(order_id: int, code: str = "", db: Session = Depends(get_db)):
     order = db.get(Order, order_id)
     if order is None or not code or order.reference_code != code.strip().upper():
         raise HTTPException(status.HTTP_404_NOT_FOUND, "This commission cannot be found.")
+    return project_order(order, db)
+
+
+class TxHashIn(BaseModel):
+    code: str = ""
+    tx_hash: str = ""
+
+
+@app.post("/api/orders/{order_id}/tx-hash", response_model=OrderStatusOut)
+def submit_tx_hash(order_id: int, body: TxHashIn, db: Session = Depends(get_db)):
+    """“I've sent the money” — the buyer pastes the transaction hash as proof."""
+    import re
+
+    order = db.get(Order, order_id)
+    if order is None or not body.code or order.reference_code != body.code.strip().upper():
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "This commission cannot be found.")
+    if order.method != "crypto" or order.status != "awaiting_payment":
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "This commission needs no proof.")
+    cleaned = body.tx_hash.strip()
+    if not re.fullmatch(r"[0-9a-zA-Z]{8,128}", cleaned):
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "That does not read as a transaction hash — paste the whole of it.",
+        )
+    order.tx_hash = cleaned
+    db.commit()
+    db.refresh(order)
     return project_order(order, db)
 
 
@@ -585,6 +615,8 @@ def _desk_project(order: Order, db: Session) -> StudioOrderOut:
         method=order.method,
         amount_cents=order.amount_cents,
         reference_code=order.reference_code,
+        tx_hash=order.tx_hash,
+        pay_currency=order.pay_currency,
         handover_area=order.handover_area,
         handover_window=order.handover_window,
         handover_place_note=order.handover_place_note,

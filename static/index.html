@@ -158,6 +158,14 @@
         <label style="display:block;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
           <input type="radio" name="method" value="on_delivery"> Pay at the handover — Montréal only, cash or tap</label>
       </div>
+      <div id="acCoins" hidden style="margin:-8px 0 20px 22px">
+        <label style="display:block;margin-bottom:8px;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="coin" value="eth" checked> Ethereum</label>
+        <label style="display:block;margin-bottom:8px;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="coin" value="btc"> Bitcoin</label>
+        <label style="display:block;font:400 15px var(--f-serif);color:var(--ink-dim);cursor:pointer">
+          <input type="radio" name="coin" value="usdc"> USD Coin, on Ethereum</label>
+      </div>
       <label class="f-field"><span>Your name</span><input name="name" autocomplete="name"></label>
       <label class="f-field"><span>Where the desk can reach you</span><input name="email" autocomplete="email"></label>
       <label class="f-field"><span>Telephone — only if you like (optional)</span><input name="phone" autocomplete="tel"></label>
@@ -180,6 +188,11 @@
       <h3 id="acRef" style="letter-spacing:.18em"></h3>
       <p class="s-copy" id="acInstr"></p>
       <p><a class="btn-line" id="acContinue" hidden style="display:inline-block;text-decoration:none">Continue to PayPal</a></p>
+      <div id="acProof" hidden>
+        <label class="f-field"><span>The transaction hash — your proof</span><input id="acHash" autocomplete="off"></label>
+        <p class="form-msg" id="acProofMsg" role="status"></p>
+        <button class="btn-line" id="acSent" type="button">I've sent it</button>
+      </div>
       <p class="form-msg">Keep this reference — it is the only key to your commission.</p>
       <label class="f-field"><span>Commission number</span><input id="acLookId" autocomplete="off"></label>
       <label class="f-field"><span>Reference</span><input id="acLookCode" autocomplete="off"></label>

@@ -418,22 +418,30 @@ is Montreal, and cheap to add later).
   trip, then flip `PAYPAL_ENV=live` — the only change. Missing keys →
   503, never a half-made commission (rollback before raise).
 
-## 20. M4 notes (crypto — built, behind keys)
+## 20. M4 notes (crypto — manual wallet, revised)
 
-- `POST /api/orders` with `crypto` creates a locked-CAD charge and
-  returns `checkout_url`: Coinbase Commerce by default, BTCPay invoices
-  when `CRYPTO_PROVIDER=btpay` (needs `BTPAY_URL/API_KEY/STORE_ID`).
-  Cents inside, decimals on the provider wire only.
-- `/webhooks/crypto` dispatches by header: `BTCPAY-SIG` → BTCPay HMAC,
-  else Coinbase `X-CC-Webhook-Signature` over `{timestamp}.{raw}`.
-  Only `charge:confirmed` / `InvoiceSettled` pays; everything pending
-  is recorded as a note. Idempotency spans `event id + type`, because
-  one invoice speaks several times (received, then settled).
-- Order matching: `metadata.reference` (our `LV-XXXX`) → `order_id` →
-  charge/invoice id against `provider_ref`.
-- The status page says "settling" once a pending event is seen, and
-  only "settled" counts: `payment_confirmed` fires on confirmed events
-  alone. Missing keys → 503 with rollback, same as PayPal.
+- The provider flow (Coinbase/BTCPay in `app/payments/crypto.py`)
+  is shelved: buyers send to the founders' own wallet
+  (`CRYPTO_DEPOSIT_ADDRESS` in host env — never committed), then
+  press "I've sent it" and paste the transaction hash as proof
+  (`POST /api/orders/{id}/tx-hash`, guarded by the reference code).
+  The desk verifies on-chain with its own eyes, then `mark-paid`.
+- `POST /api/orders` with `crypto` needs no keys and returns no
+  `checkout_url` — just the instructions naming the address. The
+  status page says "watching the chain" once a hash is kept; the
+  order stays `awaiting_payment` until the studio settles it.
+- The studio desk shows the pasted hash per commission (`tx_hash`
+  column, `9c2f1a8df16c6` revision — existing dev DBs need
+  `alembic stamp 75e1a8df16c6 && alembic upgrade head` once).
+- Three coins: ETH + USDC on Ethereum (one address shape),
+  BTC on its own. The buyer picks the coin at checkout
+  (`pay_currency`, `4f8a2c1d9e3b` revision — validated, no silent
+  default); instructions name that coin's address
+  (`CRYPTO_{ETH,BTC,USDC}_ADDRESS` in host env — never committed).
+  The desk links each pasted hash to its explorer (Etherscan for
+  ETH/USDC, mempool.space for BTC) — verification stays one click.
+- The old automated webhook path still verifies + records (kept for
+  later), but nothing in the manual flow calls it.
 
 ## 21. M5 notes (handover — the Acquired plaque)
 

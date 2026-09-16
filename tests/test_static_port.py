@@ -22,6 +22,8 @@ REQUIRED = (
     "acMethods",            # road choice: interac / paypal / crypto / handover
     "acLookCode",           # ask-after-it lookup
     'value="crypto"',       # M4 road open
+    'value="usdc"',         # coin choice: eth / btc / usdc
+    'id="acCoins"',         # ...shown only on the crypto road
     'unlisted route" hidden',  # the door starts unlisted — Raph's knock only
 )
 

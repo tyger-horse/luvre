@@ -49,6 +49,12 @@ services:
         sync: false
       - key: INTERAC_TRANSFER_EMAIL
         sync: false
+      - key: CRYPTO_ETH_ADDRESS
+        sync: false
+      - key: CRYPTO_BTC_ADDRESS
+        sync: false
+      - key: CRYPTO_USDC_ADDRESS
+        sync: false
 
 databases:
   - name: luvre-db

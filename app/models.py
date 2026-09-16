@@ -87,6 +87,8 @@ class Order(Base):
     currency: Mapped[str] = mapped_column(String(8), default="CAD")
     reference_code: Mapped[str] = mapped_column(String(16), unique=True, index=True)
     provider_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tx_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    pay_currency: Mapped[str | None] = mapped_column(String(16), nullable=True)
     handover_area: Mapped[str | None] = mapped_column(String(120), nullable=True)
     handover_window: Mapped[str | None] = mapped_column(String(200), nullable=True)
     handover_place_note: Mapped[str | None] = mapped_column(Text, nullable=True)

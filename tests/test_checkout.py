@@ -78,7 +78,6 @@ def test_status_page_guards_with_reference(client, wall_piece):
 
 def test_checkout_validation(client, wall_piece, db):
     assert buy(client, wall_piece.id, method="pigeon").status_code == 400
-    assert buy(client, wall_piece.id, method="crypto").status_code == 503  # no keys in test
     assert buy(client, wall_piece.id, buyer_name="").status_code == 400
     assert buy(client, wall_piece.id, buyer_email="not-an-address").status_code == 400
     assert buy(client, wall_piece.id, method="on_delivery", handover_area="").status_code == 400

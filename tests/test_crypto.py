@@ -1,13 +1,9 @@
-"""M4 — crypto charges: hosted road, confirmed-only settlement (provider stubbed)."""
-
-import hashlib
-import hmac
-import json
+"""Manual crypto: buyer sends to the wallet, pastes the tx hash as proof."""
 
 import pytest
 
-from app.models import Order, PaymentEvent, Piece
-from app.payments import crypto as crypto_provider
+from app.config import settings
+from app.models import Order, Piece
 
 
 @pytest.fixture()
@@ -28,129 +24,87 @@ def wall_piece(db, founder):
 
 
 @pytest.fixture()
-def charge_stub(monkeypatch):
-    monkeypatch.setattr(
-        crypto_provider, "create_charge",
-        lambda **kw: {
-            "provider_ref": "CHG-1",
-            "checkout_url": "https://commerce.coinbase.com/charges/CHG-1",
-        },
-    )
+def wallet(monkeypatch):
+    addrs = {
+        "CRYPTO_ETH_ADDRESS": "0xF0EdE6aCCc101ba707ca7e7d0D12dBFBb2D9C1ba",
+        "CRYPTO_BTC_ADDRESS": "bc1q392r4qk948zj4ayun4x9hrfrfe2mk8mnhfgswwfhu4vq5hmtl6asn6xs2y",
+        "CRYPTO_USDC_ADDRESS": "0xF0EdE6aCCc101ba707ca7e7d0D12dBFBb2D9C1ba",
+    }
+    for key, value in addrs.items():
+        monkeypatch.setattr(settings, key, value)
+    return addrs
 
 
-def buy_crypto(client, piece_id):
+def buy_crypto(client, piece_id, coin="btc"):
     return client.post("/api/orders", json={
         "piece_id": piece_id,
         "method": "crypto",
         "buyer_name": "Acheteuse",
         "buyer_email": "a@example.ca",
+        "pay_currency": coin,
     })
 
 
-def coinbase_hook(client, payload: dict, secret: str = "test-secret", ts: str = "1719000000"):
-    raw = json.dumps(payload).encode()
-    sig = hmac.new(secret.encode(), ts.encode() + b"." + raw, hashlib.sha256).hexdigest()
-    return client.post("/webhooks/crypto", content=raw, headers={
-        "content-type": "application/json",
-        "x-cc-webhook-signature": sig,
-        "x-cc-webhook-timestamp": ts,
-    })
-
-
-def btpay_hook(client, payload: dict, monkeypatch, valid: bool = True):
-    monkeypatch.setattr(
-        crypto_provider, "verify_btpay_signature", lambda raw, sig, secret: valid
-    )
-    # The handler calls the module-global imported into app.main; patch there too.
-    import app.main as main
-
-    monkeypatch.setattr(main, "verify_btpay_signature", lambda raw, sig, secret: valid)
-    return client.post("/webhooks/crypto", content=json.dumps(payload).encode(), headers={
-        "content-type": "application/json",
-        "btcpay-sig": "stubbed",
-    })
-
-
-def test_crypto_order_returns_hosted_road(client, wall_piece, db, charge_stub):
+def test_crypto_order_names_the_wallet(client, wall_piece, db, wallet):
     res = buy_crypto(client, wall_piece.id)
     assert res.status_code == 201, res.text
     order = res.json()
     assert order["status"] == "awaiting_payment"
-    assert order["checkout_url"] == "https://commerce.coinbase.com/charges/CHG-1"
-    assert order["approval_url"] is None
-    assert db.get(Order, order["id"]).provider_ref == "CHG-1"
+    assert order["pay_currency"] == "btc"
+    assert order["checkout_url"] is None
+    assert wallet["CRYPTO_BTC_ADDRESS"] in (order["instructions"] or "")
+    assert "Bitcoin" in (order["instructions"] or "")
+    assert order["reference_code"] in (order["instructions"] or "")
+    assert db.get(Order, order["id"]).provider_ref is None
+
+    eth = buy_crypto(client, wall_piece.id, coin="eth")
+    assert eth.status_code == 409  # held, whichever coin
 
 
-def test_confirmed_settles_pending_only_settles_the_page(client, wall_piece, db, charge_stub):
-    order = buy_crypto(client, wall_piece.id).json()
-
-    pending = coinbase_hook(client, {
-        "id": "evt_pend_9",
-        "type": "charge:pending",
-        "data": {"id": "CHG-1", "metadata": {"reference": order["reference_code"]}},
+def test_crypto_needs_a_coin(client, wall_piece):
+    res = client.post("/api/orders", json={
+        "piece_id": wall_piece.id, "method": "crypto",
+        "buyer_name": "A", "buyer_email": "a@example.ca",
+        "pay_currency": "doge",
     })
-    assert pending.status_code == 200
-    assert db.get(Order, order["id"]).status == "awaiting_payment"
-    status = client.get(f"/api/orders/{order['id']}?code={order['reference_code']}").json()
-    assert "settling" in (status["instructions"] or "")
-
-    confirmed = coinbase_hook(client, {
-        "id": "evt_conf_9",
-        "type": "charge:confirmed",
-        "data": {"id": "CHG-1", "metadata": {"reference": order["reference_code"]}},
-    })
-    assert confirmed.json()["order_status"] == "paid"
-    assert db.get(Order, order["id"]).status == "paid"
-    assert db.get(Piece, wall_piece.id).status == "sold"
-
-    again = coinbase_hook(client, {
-        "id": "evt_conf_9",
-        "type": "charge:confirmed",
-        "data": {"id": "CHG-1", "metadata": {"reference": order["reference_code"]}},
-    })
-    assert again.json()["status"] == "duplicate"
-    assert db.query(PaymentEvent).filter_by(provider_event_id="evt_conf_9|charge:confirmed").count() == 1
-
-
-def test_charge_matched_by_provider_ref(client, wall_piece, db, charge_stub):
-    order = buy_crypto(client, wall_piece.id).json()
-    res = coinbase_hook(client, {
-        "id": "evt_conf_10",
-        "type": "charge:confirmed",
-        "data": {"id": "CHG-1", "metadata": {}},
-    })
-    assert res.json()["order_status"] == "paid"
-
-
-def test_bad_signature_changes_nothing(client, wall_piece, db, charge_stub):
-    order = buy_crypto(client, wall_piece.id).json()
-    res = coinbase_hook(
-        client,
-        {"id": "evt_bad_9", "type": "charge:confirmed",
-         "data": {"id": "CHG-1", "metadata": {"reference": order["reference_code"]}}},
-        secret="wrong-secret",
-    )
     assert res.status_code == 400
-    assert db.get(Order, order["id"]).status == "awaiting_payment"
+    res = client.post("/api/orders", json={
+        "piece_id": wall_piece.id, "method": "crypto",
+        "buyer_name": "A", "buyer_email": "a@example.ca",
+    })
+    assert res.status_code == 400
 
 
-def test_btcpay_settled_pays_received_only_notes(client, wall_piece, db, charge_stub, monkeypatch):
+def test_sent_proof_kept_then_desk_settles(client, auth_headers, wall_piece, db, wallet):
     order = buy_crypto(client, wall_piece.id).json()
-    meta = {"orderId": str(order["id"]), "reference": order["reference_code"]}
+    tx = "a" * 64
 
-    noted = btpay_hook(client, {
-        "type": "InvoiceReceivedPayment", "invoiceId": "INV-1", "metadata": meta,
-    }, monkeypatch)
-    assert noted.status_code == 200
+    sent = client.post(f"/api/orders/{order['id']}/tx-hash", json={
+        "code": order["reference_code"], "tx_hash": tx,
+    })
+    assert sent.status_code == 200, sent.text
+    assert sent.json()["tx_hash"] == tx
+    assert "watching the chain" in (sent.json()["instructions"] or "")
     assert db.get(Order, order["id"]).status == "awaiting_payment"
 
-    settled = btpay_hook(client, {
-        "type": "InvoiceSettled", "invoiceId": "INV-1", "metadata": meta,
-    }, monkeypatch)
-    assert settled.json()["order_status"] == "paid"
+    # The desk checks the chain with its own eyes, then marks paid.
+    desk = client.get("/api/studio/orders", headers=auth_headers).json()
+    assert desk[0]["tx_hash"] == tx
+    paid = client.post(f"/api/studio/orders/{order['id']}/mark-paid", headers=auth_headers)
+    assert paid.json()["status"] == "paid"
     assert db.get(Piece, wall_piece.id).status == "sold"
 
-    refused = btpay_hook(client, {
-        "type": "InvoiceSettled", "invoiceId": "INV-1", "metadata": meta,
-    }, monkeypatch, valid=False)
-    assert refused.status_code == 400
+
+def test_proof_guards(client, wall_piece, db, wallet):
+    order = buy_crypto(client, wall_piece.id).json()
+    url = f"/api/orders/{order['id']}/tx-hash"
+    assert client.post(url, json={"code": "LV-XXXX", "tx_hash": "b" * 64}).status_code == 404
+    assert client.post(url, json={"code": order["reference_code"], "tx_hash": "short"}).status_code == 400
+    assert client.post(url, json={"code": order["reference_code"], "tx_hash": "not a hash!!"}).status_code == 400
+    assert db.get(Order, order["id"]).tx_hash is None
+
+    interac = client.post("/api/orders", json={
+        "piece_id": wall_piece.id, "method": "interac",
+        "buyer_name": "B", "buyer_email": "b@example.ca",
+    })
+    assert interac.status_code == 409  # held by the crypto commission, proof or not

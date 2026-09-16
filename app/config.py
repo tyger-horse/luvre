@@ -27,6 +27,10 @@ class Settings(BaseSettings):
 
     INTERAC_TRANSFER_EMAIL: str = ""
 
+    CRYPTO_ETH_ADDRESS: str = ""   # manual wallets; buyer picks a coin,
+    CRYPTO_BTC_ADDRESS: str = ""   # sends there, then pastes the tx hash
+    CRYPTO_USDC_ADDRESS: str = ""  # (USDC lives on Ethereum here)
+
     JWT_EXPIRY_MINUTES: int = 60 * 12
 
     @field_validator("PUBLIC_BASE_URL", mode="before")

@@ -131,6 +131,7 @@ class OrderCreate(BaseModel):
     buyer_phone: str | None = None
     handover_area: str | None = None
     handover_window: str | None = None
+    pay_currency: str | None = None  # crypto only: eth | btc | usdc
 
 
 class OrderStatusOut(BaseModel):
@@ -150,6 +151,8 @@ class OrderStatusOut(BaseModel):
     instructions: str | None = None
     approval_url: str | None = None
     checkout_url: str | None = None
+    tx_hash: str | None = None
+    pay_currency: str | None = None
 
 
 class ScheduleIn(BaseModel):
@@ -168,6 +171,8 @@ class StudioOrderOut(BaseModel):
     method: str
     amount_cents: StrictInt
     reference_code: str
+    tx_hash: str | None = None
+    pay_currency: str | None = None
     handover_area: str | None = None
     handover_window: str | None = None
     handover_place_note: str | None = None

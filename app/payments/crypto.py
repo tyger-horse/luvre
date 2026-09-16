@@ -49,6 +49,30 @@ CONFIRMED_TYPES = {"charge:confirmed", "confirmed", "InvoiceSettled"}
 PENDING_TYPES = {"charge:pending", "pending", "InvoiceReceivedPayment", "InvoiceProcessing"}
 
 
+# --- Manual wallet flow (live): the buyer picks a coin, sends to the
+# founders' own address, and pastes the transaction hash as proof. ---
+
+COINS = {
+    "eth": {"label": "Ethereum", "explorer": "https://etherscan.io/tx/"},
+    "btc": {"label": "Bitcoin", "explorer": "https://mempool.space/tx/"},
+    "usdc": {"label": "USD Coin, on Ethereum", "explorer": "https://etherscan.io/tx/"},
+}
+
+
+def deposit_address(coin: str) -> str:
+    coin = (coin or "").lower()
+    if coin == "btc":
+        return settings.CRYPTO_BTC_ADDRESS
+    if coin == "usdc":
+        return settings.CRYPTO_USDC_ADDRESS
+    return settings.CRYPTO_ETH_ADDRESS
+
+
+def explorer_url(coin: str, tx_hash: str) -> str:
+    base = COINS.get((coin or "").lower(), COINS["eth"])["explorer"]
+    return f"{base}{tx_hash}"
+
+
 def is_confirmed(event_type: str) -> bool:
     return event_type in CONFIRMED_TYPES
 
