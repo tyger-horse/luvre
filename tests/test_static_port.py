@@ -77,8 +77,9 @@ def test_studio_scripts_carry_no_open_registration(client):
 
 def test_door_is_unlisted(client):
     js = client.get("/static/studio.js").text
-    for needle in ("#atelier", "revealDoor", "luvre.door"):
+    for needle in ("#atelier", "revealDoor", "triple("):
         assert needle in js, f"the secret knock lost {needle!r}"
+    assert "sessionStorage" not in js, "the door must start shut every visit"
 
 
 def test_frozen_tokens_survive(client):

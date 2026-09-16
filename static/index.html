@@ -92,13 +92,14 @@
       <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M5 5l14 14M19 5L5 19"/></svg>
     </button>
     <span class="s-over">Unlisted portal</span>
-    <h3>The atelier desk</h3>
-    <p class="s-copy">Hang here, settle there. Buyers need no accounts — neither do you: the knock was the whole key.</p>
+    <h3>Studio</h3>
+    <p class="s-copy">Upload pieces, publish them, and manage commissions. This page is unlisted — buyers never see it.</p>
 
     <div id="deskBox" hidden>
       <div class="desk-head">
-        <span>the desk is open — hang here, settle there</span>
+        <span>Studio desk</span>
       </div>
+      <div id="pieceDesk"></div>
       <div id="orderDesk"></div>
       <form id="postForm" novalidate>
         <label class="f-field"><span>House pseudonym — published</span><input name="pseudonym" autocomplete="off"></label>
@@ -113,7 +114,7 @@
         <label class="f-field"><span>Care</span><input name="care" autocomplete="off"></label>
         <label class="f-field"><span>Plate image *</span>
           <input type="file" id="postFile" accept="image/*" hidden>
-          <span class="file-line" id="fileLine">select a photograph of the piece</span>
+          <span class="file-line" id="fileLine">Choose a photo of the piece</span>
           <img class="file-prev" id="filePrev" alt="" hidden>
         </label>
         <p class="form-msg" id="postMsg" role="status"></p>

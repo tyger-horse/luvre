@@ -488,11 +488,13 @@ is Montreal, and cheap to add later).
   deleted. Studio endpoints take no credentials; the money roads
   already pay Raph directly, so the desk holds nothing worth stealing
   but the hanging itself.
-- The door is unlisted twice over: three touches on the £UVR€
-  wordmark within a breath reveal the entry, and three touches on
-  the entry open the desk (`https://<host>/#atelier` opens it
-  straight away). Tell Raph privately — never in print, never in a
-  screenshot. `test_door_is_unlisted` guards it.
+- The door is unlisted twice over, in order: three touches on the
+  £UVR€ wordmark within a breath reveal the entry (nothing more),
+  and three touches on the entry open the desk
+  (`https://<host>/#atelier` opens it straight away). Every visit
+  starts shut — nothing remembers the knock, by design. Tell Raph
+  privately — never in print, never in a screenshot.
+  `test_door_is_unlisted` guards it.
 - Plain truth, stated once: the knock keeps honest visitors out; it
   does not stop anyone technical (the JS is readable, the endpoints
   are open). This is the founders' explicit trade for a desk with
